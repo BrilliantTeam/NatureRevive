@@ -1,0 +1,19 @@
+name: NatureRevive
+version: '${project.version}'
+main: engineer.skyouo.plugins.naturerevive.NatureRevive
+api-version: 1.19
+depend: [Residence]
+commands:
+  snapshot:
+    description: "Take snapshot of current chunk."
+    usage: "/snapshot"
+    permission: naturerevive.snapshot
+  revert:
+    description: "Revert chunk from earlier snapshot"
+    usage: "/revert <snapshot-id>"
+    permission: naturerevive.revert
+permissions:
+  naturerevive.snapshot:
+    default: op
+  naturerevive.revert:
+    default: op

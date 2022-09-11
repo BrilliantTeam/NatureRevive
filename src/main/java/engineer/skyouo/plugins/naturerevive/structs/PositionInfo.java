@@ -1,13 +1,14 @@
 package engineer.skyouo.plugins.naturerevive.structs;
 
-import com.bekvon.bukkit.residence.api.ResidenceApi;
-import com.bekvon.bukkit.residence.api.ResidenceInterface;
+import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static engineer.skyouo.plugins.naturerevive.NatureRevive.residenceApi;
 
 @SerializableAs("PositionInfo")
 public class PositionInfo implements ConfigurationSerializable {
@@ -25,9 +26,7 @@ public class PositionInfo implements ConfigurationSerializable {
     }
 
     public static boolean isResidence(Location location) {
-        ResidenceInterface residenceManager = ResidenceApi.getResidenceManager();
-
-        return residenceManager != null && residenceManager.getByLoc(location) != null;
+        return residenceApi != null && ((ResidenceManager) residenceApi).getByChunk(location.getChunk()).size() != 0;
     }
 
     public boolean isOverTTL() {
@@ -40,6 +39,10 @@ public class PositionInfo implements ConfigurationSerializable {
 
     public long getTTL() {
         return ttl;
+    }
+
+    public void setTTL(long ttl) {
+        this.ttl = ttl;
     }
 
     @Override

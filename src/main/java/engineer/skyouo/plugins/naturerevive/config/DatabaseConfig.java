@@ -18,7 +18,6 @@ public class DatabaseConfig {
     public DatabaseConfig() {
         new File("plugins/NatureRevive").mkdirs();
         configuration = YamlConfiguration.loadConfiguration(file);
-        System.out.println(configuration);
     }
 
     public void set(PositionInfo positionInfo) {
@@ -45,8 +44,6 @@ public class DatabaseConfig {
             PositionInfo positionInfo = (PositionInfo) configuration.get(key);
             positionInfos.add(positionInfo);
         }
-
-        System.out.println(positionInfos);
 
         return positionInfos;
     }

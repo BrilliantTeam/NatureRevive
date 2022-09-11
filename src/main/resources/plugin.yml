@@ -2,7 +2,7 @@ name: NatureRevive
 version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.NatureRevive
 api-version: 1.19
-depend: [Residence]
+softdepend: [Residence, CoreProtect]
 commands:
   snapshot:
     description: "Take snapshot of current chunk."
@@ -12,8 +12,20 @@ commands:
     description: "Revert chunk from earlier snapshot"
     usage: "/revert <snapshot-id>"
     permission: naturerevive.revert
+  forceregenall:
+    description: "Force regenerate all chunk from local data."
+    usage: "/forceregenall"
+    permission: naturerevive.forceregenall
+  testrandomizeore:
+    description: "Test perlin noise from randomizeOre function."
+    usage: "/testrandomizeore"
+    permission: naturerevive.testrandomizeore
 permissions:
   naturerevive.snapshot:
     default: op
   naturerevive.revert:
+    default: op
+  naturerevive.forceregenall:
+    default: op
+  naturerevive.testrandomizeore:
     default: op

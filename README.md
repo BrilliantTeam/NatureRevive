@@ -12,9 +12,7 @@
 
 ## 🔴 dependencies | 依賴前置
 
-**CorePortect (optional)**
-**Residence (optional)
+**CorePortect (optional)** , **Residence (optional)**
 
-**CorePortect (可選)**
-**Residence (可選)**
+**CorePortect (可選)**、**Residence (可選)**
 

@@ -193,9 +193,12 @@ public class Task {
                                     Location neighborLocation = originLocation.clone().add(i, j, k);
                                     if (isNotInTheChunk(chunk, neighborLocation)) continue;
 
-                                    Material targetType = chunk.getWorld().getBlockAt(neighborLocation).getType();
+                                    int[] xyz = convertLocationToInChunkXYZ(neighborLocation);
+
+                                    Material targetType = oldChunkSnapshot.getBlockType(xyz[0], xyz[1], xyz[2]);
+
                                     if (targetType.equals(Material.END_PORTAL) || targetType.equals(Material.END_GATEWAY) || targetType.equals(Material.BEDROCK))
-                                        perversedBlocks.put(neighborLocation, chunk.getWorld().getBlockData(neighborLocation));
+                                        perversedBlocks.put(neighborLocation, oldChunkSnapshot.getBlockData(xyz[0], xyz[1], xyz[2]));
                                 }
                     } else if (blockType.equals(Material.NETHER_PORTAL) && !perversedBlocks.containsKey(originLocation)) {
                         for (int i = -1; i <= 1; i++)
@@ -204,9 +207,12 @@ public class Task {
                                     Location neighborLocation = originLocation.clone().add(i, j, k);
                                     if (isNotInTheChunk(chunk, neighborLocation)) continue;
 
-                                    Material targetType = chunk.getWorld().getBlockAt(neighborLocation).getType();
+                                    int[] xyz = convertLocationToInChunkXYZ(neighborLocation);
+
+                                    Material targetType = oldChunkSnapshot.getBlockType(xyz[0], xyz[1], xyz[2]);
+
                                     if (targetType.equals(Material.NETHER_PORTAL) || targetType.equals(Material.OBSIDIAN))
-                                        perversedBlocks.put(neighborLocation, chunk.getWorld().getBlockData(neighborLocation));
+                                        perversedBlocks.put(neighborLocation, oldChunkSnapshot.getBlockData(xyz[0], xyz[1], xyz[2]));
                                 }
                     } else if (blockType.equals(Material.BEDROCK)) {
                         if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END))
@@ -224,9 +230,9 @@ public class Task {
                             for (int j = -2; j <= 2; j++)
                                 for (int k = -2; k <= 2; k++) {
                                     Location neighborLocation = originLocation.clone().add(i, j, k);
-                                    if (isNotInTheChunk(chunk, neighborLocation)) continue;
+                                    Material neighborBlockType = neighborLocation.getBlock().getType();
 
-                                    if (perversedBlocks.containsKey(neighborLocation)) {
+                                    if (perversedBlocks.containsKey(neighborLocation) || (neighborBlockType.equals(Material.END_GATEWAY)) || neighborBlockType.equals(Material.END_PORTAL)) {
                                         perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
                                         break;
                                     }
@@ -339,7 +345,6 @@ public class Task {
                     nbtList.add(new NbtWithPos(argument[3], new Location(world, Integer.parseInt(argument[0]), Integer.parseInt(argument[1]), Integer.parseInt(argument[2]))));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
                 break;
             }
         }
@@ -376,6 +381,10 @@ public class Task {
     private static boolean isInSpecialChunks(Chunk chunk) {
         return (chunk.getX() == 0 || chunk.getX() == -1) && (chunk.getZ() == 0 || chunk.getZ() == 1);
     }
+
+    private static int[] convertLocationToInChunkXYZ(Location location) {
+        return new int[] { (location.getBlockX() - ((location.getBlockX() >> 4) << 4)), location.getBlockY(), (location.getBlockZ() - ((location.getBlockZ() >> 4) << 4)) };
+    };
 
     @Override
     public String toString() {

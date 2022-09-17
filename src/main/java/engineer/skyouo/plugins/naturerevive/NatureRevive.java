@@ -12,7 +12,6 @@ import engineer.skyouo.plugins.naturerevive.manager.Task;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
-import org.apache.logging.log4j.core.Core;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 

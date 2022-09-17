@@ -90,7 +90,6 @@ public class ObfuscateLootListener implements Listener {
         if (chunk.getWorld().getEnvironment().equals(World.Environment.NETHER)) {
             int surface = findSurface(location);
             if (surface < 140) surface = 140;
-
             //System.out.println(chunk.getWorld().getMaxHeight());
             //System.out.println(findSurface(location));
             for (int x = 0; x < 16; x++) {
@@ -109,6 +108,8 @@ public class ObfuscateLootListener implements Listener {
             }
         } else {
             int surface = findSurface(location);
+            if (NatureRevive.readonlyConfig.saferOreObfuscation) surface = 40;
+
             for (int x = 0; x < 16; x++) {
                 for (int y = chunk.getWorld().getMinHeight(); y <= surface; y++) {
                     calculateExpectation(chunk, pairList, oreList, x, y);
@@ -147,6 +148,18 @@ public class ObfuscateLootListener implements Listener {
         for (int z = 0; z < 16; z++) {
             Block block = chunk.getBlock(x, y, z);
             if (block.getType().equals(Material.AIR) || block.getType().equals(Material.WATER) || block.getType().equals(Material.LAVA)) continue;
+
+            if (NatureRevive.readonlyConfig.saferOreObfuscation && (
+                    (
+                            chunk.getWorld().getEnvironment().equals(World.Environment.NORMAL) &&
+                                    !block.getType().equals(Material.STONE) &&
+                                    !block.getType().equals(Material.DEEPSLATE)
+                    ) || (
+                            chunk.getWorld().getEnvironment().equals(World.Environment.NORMAL) &&
+                                    !block.getType().equals(Material.NETHERRACK)
+                    )
+            ))
+                continue;
 
             if (OreBlocks.contains(block.getType())) {
                 oreList.add(block);

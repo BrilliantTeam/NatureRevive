@@ -163,7 +163,7 @@ public class Task {
                 }
             }
 
-            setBlocksSynchronous(perversedBlocks);
+            setBlocksSynchronous(perversedBlocks, tileEntities);
 
             if (tileEntities.size() > 0) {
                 for (NbtWithPos tileEntityPos : tileEntities) {
@@ -274,13 +274,22 @@ public class Task {
         }
 
         // todo: queue this instead of make it executed immediately.
-        setBlocksSynchronous(perversedBlocks);
+        setBlocksSynchronous(perversedBlocks, Collections.EMPTY_LIST);
     }
 
-    private void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks) {
+    private void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks, List<NbtWithPos> tileEntities) {
         synchronized (blockStateWithPosQueue) {
             for (Location location : perversedBlocks.keySet()) {
-                blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location));
+                boolean findTheNbt = false;
+                for (NbtWithPos nbtWithPos : tileEntities) {
+                    if (nbtWithPos.getLocation().equals(location)) {
+                        blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location, nbtWithPos.getNbt().getAsString()));
+                        findTheNbt = true;
+                        break;
+                    }
+                }
+                if (findTheNbt)
+                    blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location));
             }
         }
     }

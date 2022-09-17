@@ -2,6 +2,7 @@ package engineer.skyouo.plugins.naturerevive;
 
 import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.api.ResidenceInterface;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import engineer.skyouo.plugins.naturerevive.commands.*;
 import engineer.skyouo.plugins.naturerevive.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.config.ReadonlyConfig;
@@ -14,6 +15,7 @@ import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.TagParser;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
@@ -98,6 +100,16 @@ public final class NatureRevive extends JavaPlugin {
 
                 BlockPos bp = new BlockPos(location.getX(), location.getY(), location.getZ());
                 ((CraftWorld) location.getWorld()).getHandle().setBlock(bp, blockStateWithPos.getBlockState(), 3);
+
+                if (blockStateWithPos.getTileEntityNbt() != null) {
+                    try {
+                        ((CraftWorld) location.getWorld()).getHandle()
+                                .getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                                .load(TagParser.parseTag(blockStateWithPos.getTileEntityNbt()));
+                    } catch (CommandSyntaxException | NullPointerException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }, 20L, readonlyConfig.blockPutActionPerNTick);
 

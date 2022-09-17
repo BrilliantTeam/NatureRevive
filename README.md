@@ -1,5 +1,8 @@
 # NatureRevive | 資源再生，告別資源界！
+遊戲版本: 1.19.2
 
+Spigot: <br>
+巴哈介紹: 
 ---
 
 [Made for 輝煌伺服器.](https://discord.gg/5MHGpAFGEN "The Copyright of the entire source codes is owned by NCT-skyouo according to Article 10 the Copyright Law of the Republic of China.")

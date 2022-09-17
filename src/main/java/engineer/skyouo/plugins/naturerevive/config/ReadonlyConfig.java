@@ -88,9 +88,7 @@ public class ReadonlyConfig {
 
             configuration.set("griefprevention-strict-check", false);
             configuration.setComments("griefprevention-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GP領地範圍內的方塊 功能",
-                    "演示影片: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5",
-                    "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention to new chunk instead of skipping chunk.",
-                    "Demo: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5"));
+                    "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention to new chunk instead of skipping chunk."));
 
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComments("coreprotect-log-username", Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",

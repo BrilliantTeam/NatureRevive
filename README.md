@@ -15,9 +15,9 @@ Spigot: 暫無<br>
 
 ## 🔴 dependencies | 依賴前置
 
-**CorePortect (optional)** , **Residence (optional)**
+**CorePortect (optional) , Residence (optional) , GriefPrevention(optional)**
 
-**CorePortect (可選)**、**Residence (可選)**
+**CorePortect (可選)、Residence (可選)、GriefPrevention (可選)**
 
 ## 🖌Commands | 指令
 ```

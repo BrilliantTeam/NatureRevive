@@ -3,7 +3,6 @@ package engineer.skyouo.plugins.naturerevive.listeners;
 import com.google.common.collect.Lists;
 import engineer.skyouo.plugins.naturerevive.NatureRevive;
 import engineer.skyouo.plugins.naturerevive.constants.OreBlocks;
-import engineer.skyouo.plugins.naturerevive.generator.PerlinNoise;
 import it.unimi.dsi.fastutil.objects.ObjectDoubleImmutablePair;
 import it.unimi.dsi.fastutil.objects.ObjectDoublePair;
 import org.bukkit.Chunk;
@@ -28,7 +27,6 @@ import java.util.*;
 
 public class ObfuscateLootListener implements Listener {
     private static final Random secureRandom = new SecureRandom();
-    private static final PerlinNoise perlinNoise = new PerlinNoise();
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerInteractionEvent(PlayerInteractEvent event) {

@@ -3,6 +3,7 @@ version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.NatureRevive
 api-version: 1.19
 softdepend: [Residence, CoreProtect]
+website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
 commands:
   snapshot:
     description: "Take snapshot of current chunk."
@@ -20,6 +21,11 @@ commands:
     description: "Test perlin noise from randomizeOre function."
     usage: "/testrandomizeore"
     permission: naturerevive.testrandomizeore
+  reloadreviveconfig:
+    aliases: [rrc]
+    description: "Reload read-only config from file."
+    usage: "/reloadreviveconfig"
+    permission: naturerevive.reloadreviveconfig
 permissions:
   naturerevive.snapshot:
     default: op
@@ -28,4 +34,6 @@ permissions:
   naturerevive.forceregenall:
     default: op
   naturerevive.testrandomizeore:
+    default: op
+  naturerevive.reloadreviveconfig:
     default: op

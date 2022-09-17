@@ -2,10 +2,7 @@ package engineer.skyouo.plugins.naturerevive;
 
 import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.api.ResidenceInterface;
-import engineer.skyouo.plugins.naturerevive.commands.ForceRegenAllCommand;
-import engineer.skyouo.plugins.naturerevive.commands.RevertCommand;
-import engineer.skyouo.plugins.naturerevive.commands.SnapshotCommand;
-import engineer.skyouo.plugins.naturerevive.commands.TestRandomizeOreCommand;
+import engineer.skyouo.plugins.naturerevive.commands.*;
 import engineer.skyouo.plugins.naturerevive.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.listeners.ChunkRelatedEventListener;
@@ -58,6 +55,7 @@ public final class NatureRevive extends JavaPlugin {
         getCommand("revert").setExecutor(new RevertCommand(this));
         getCommand("forceregenall").setExecutor(new ForceRegenAllCommand(this));
         getCommand("testrandomizeore").setExecutor(new TestRandomizeOreCommand());
+        getCommand("reloadreviveconfig").setExecutor(new ReloadCommand());
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);

@@ -1,6 +1,5 @@
 package engineer.skyouo.plugins.naturerevive.manager;
 
-import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.protection.ClaimedResidence;
 import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import com.google.common.io.ByteArrayDataInput;
@@ -9,7 +8,7 @@ import com.google.common.io.ByteStreams;
 import engineer.skyouo.plugins.naturerevive.NatureRevive;
 import engineer.skyouo.plugins.naturerevive.constants.OreBlocks;
 import engineer.skyouo.plugins.naturerevive.listeners.ObfuscateLootListener;
-import engineer.skyouo.plugins.naturerevive.structs.BlockWithPos;
+import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.NbtWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import net.minecraft.core.BlockPos;
@@ -19,8 +18,6 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_19_R1.CraftChunk;
-import org.bukkit.craftbukkit.v1_19_R1.CraftChunkSnapshot;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
 import org.bukkit.plugin.Plugin;
@@ -57,7 +54,6 @@ public class Task {
     }
 
     public void regenerateChunk() {
-        List<BlockWithPos> blocks = new ArrayList<>();
         List<NbtWithPos> nbtWithPos = new ArrayList<>();
 
         Chunk chunk = location.getChunk();
@@ -66,22 +62,12 @@ public class Task {
             chunk.load();
         }
 
-        ChunkSnapshot oldChunkSnapshot = null;
+        ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot();
 
+        // todo: make this asynchronous.
         if (residenceApi != null && NatureRevive.readonlyConfig.residenceStrictCheck) {
             List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
             if (residences.size() > 0) {
-                for (int x = 0; x < 16; x++) {
-                    for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight(); y++) {
-                        for (int z = 0; z < 16; z++) {
-                            if (residenceApi.getByLoc(new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z)) != null) {
-                                Block block = chunk.getBlock(x, y, z);
-
-                                blocks.add(new BlockWithPos(((CraftBlockData) Bukkit.createBlockData(block.getBlockData().getAsString())).getState().getBlock(), block.getLocation()));
-                            }
-                        }
-                    }
-                }
 
                 for (BlockState blockState : chunk.getTileEntities()) {
                     if (residenceApi.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
@@ -94,18 +80,14 @@ public class Task {
             }
         }
 
-        if (coreProtectAPI != null) {
-            oldChunkSnapshot = chunk.getChunkSnapshot();
-        }
-
         location.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
 
         ObfuscateLootListener.randomizeChunkOre(chunk);
 
-        if (blocks.size() > 0) {
-            for (BlockWithPos blockWithPos : blocks) {
+        /*if (blocks.size() > 0) {
+            for (BlockStateWithPos blockWithPos : blocks) {
                 BlockPos bp = new BlockPos(blockWithPos.getLocation().getX(), blockWithPos.getLocation().getY(), blockWithPos.getLocation().getZ());
-                (((CraftWorld) location.getWorld()).getHandle()).setBlock(bp, blockWithPos.getBlock().defaultBlockState(), 3);
+                (((CraftWorld) location.getWorld()).getHandle()).setBlock(bp, blockWithPos.getBlockState(), 3);
             }
         }
 
@@ -118,43 +100,184 @@ public class Task {
                     e.printStackTrace();
                 }
             }
-        }
+        }*/
 
         location.getWorld().refreshChunk(chunk.getX(), chunk.getZ());
 
-        if (coreProtectAPI != null && oldChunkSnapshot != null) {
-            ChunkSnapshot finalOldChunkSnapshot = oldChunkSnapshot;
-            Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
-                for (int x = 0; x < 16; x++) {
-                    for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight(); y++) {
-                        for (int z = 0; z < 16; z++) {
-                            Block newBlock = chunk.getBlock(x, y, z);
+        Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
+                savingMovableStructure(chunk, oldChunkSnapshot);
 
-                            Material oldBlockType = finalOldChunkSnapshot.getBlockType(x, y, z);
-                            Material newBlockType = newBlock.getType();
+                if (residenceApi != null && readonlyConfig.residenceStrictCheck)
+                    residenceOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
-                            if (OreBlocks.contains(oldBlockType)) continue;
+                if (coreProtectAPI != null)
+                    coreProtectAPILogging(chunk, oldChunkSnapshot);
+        });
 
-                            if (!oldBlockType.equals(newBlockType)) {
-                                Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                                if (oldBlockType.equals(Material.AIR)) {
-                                    coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
-                                } else {
-                                    BlockData oldBlockData = finalOldChunkSnapshot.getBlockData(x, y, z);
+        location.getChunk().unload(true);
+    }
 
-                                    coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, location, oldBlockType, oldBlockData);
-                                    if (newBlockType.equals(Material.AIR)) {
-                                        coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
-                                    }
-                                }
+    private void coreProtectAPILogging(Chunk chunk, ChunkSnapshot oldChunkSnapshot) {
+        for (int x = 0; x < 16; x++) {
+            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight(); y++) {
+                for (int z = 0; z < 16; z++) {
+                    Block newBlock = chunk.getBlock(x, y, z);
+
+                    Material oldBlockType = oldChunkSnapshot.getBlockType(x, y, z);
+                    Material newBlockType = newBlock.getType();
+
+                    if (OreBlocks.contains(oldBlockType)) continue;
+
+                    if (!oldBlockType.equals(newBlockType)) {
+                        Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+                        if (oldBlockType.equals(Material.AIR)) {
+                            coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
+                        } else {
+                            BlockData oldBlockData = oldChunkSnapshot.getBlockData(x, y, z);
+
+                            coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, location, oldBlockType, oldBlockData);
+                            if (newBlockType.equals(Material.AIR)) {
+                                coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
                             }
                         }
                     }
                 }
-            });
+            }
+        }
+    }
+
+    private void residenceOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
+        Map<Location, BlockData> perversedBlocks = new HashMap<>();
+
+        List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
+        if (residences.size() > 0) {
+            for (int x = 0; x < 16; x++) {
+                for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight(); y++) {
+                    for (int z = 0; z < 16; z++) {
+                        Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+                        if (residenceApi.getByLoc(targetLocation) != null) {
+                            BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+                            perversedBlocks.put(targetLocation, block);
+                        }
+                    }
+                }
+            }
+
+            setBlocksSynchronous(perversedBlocks);
+
+            if (tileEntities.size() > 0) {
+                for (NbtWithPos tileEntityPos : tileEntities) {
+                    BlockEntity tileEntity = (((CraftWorld) location.getWorld()).getHandle()).getBlockEntity(new BlockPos(tileEntityPos.getLocation().getX(), tileEntityPos.getLocation().getY(), tileEntityPos.getLocation().getZ()));
+                    try {
+                        tileEntity.load(tileEntityPos.getNbt());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
+    private void savingMovableStructure(Chunk chunk, ChunkSnapshot oldChunkSnapshot) {
+        Map<Location, BlockData> perversedBlocks = new HashMap<>();
+        for (int x = 0; x < 16; x++) {
+            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight(); y++) {
+                for (int z = 0; z < 16; z++) {
+                    Material blockType = oldChunkSnapshot.getBlockType(x, y, z);
+                    Location originLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+                    if ((blockType.equals(Material.END_PORTAL) || blockType.equals(Material.END_GATEWAY)) && !perversedBlocks.containsKey(originLocation)) {
+
+                        for (int i = -2; i <= 2; i++)
+                            for (int j = -2; j <= 2; j++)
+                                for (int k = -2; k <= 2; k++) {
+                                    Location neighborLocation = originLocation.clone().add(i, j, k);
+                                    if (isNotInTheChunk(chunk, neighborLocation)) continue;
+
+                                    Material targetType = chunk.getWorld().getBlockAt(neighborLocation).getType();
+                                    if (targetType.equals(Material.END_PORTAL) || targetType.equals(Material.END_GATEWAY) || targetType.equals(Material.BEDROCK))
+                                        perversedBlocks.put(neighborLocation, chunk.getWorld().getBlockData(neighborLocation));
+                                }
+                    } else if (blockType.equals(Material.NETHER_PORTAL) && !perversedBlocks.containsKey(originLocation)) {
+                        for (int i = -1; i <= 1; i++)
+                            for (int j = -1; j <= 1; j++)
+                                for (int k = -1; k <= 1; k++) {
+                                    Location neighborLocation = originLocation.clone().add(i, j, k);
+                                    if (isNotInTheChunk(chunk, neighborLocation)) continue;
+
+                                    Material targetType = chunk.getWorld().getBlockAt(neighborLocation).getType();
+                                    if (targetType.equals(Material.NETHER_PORTAL) || targetType.equals(Material.OBSIDIAN))
+                                        perversedBlocks.put(neighborLocation, chunk.getWorld().getBlockData(neighborLocation));
+                                }
+                    } else if (blockType.equals(Material.BEDROCK)) {
+                        if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END))
+                            continue;
+
+                        if (isInSpecialChunks(chunk)) {
+                            perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+
+                            Location neighborLocation = originLocation.clone().add(0, 1, 0);
+                            perversedBlocks.put(neighborLocation, oldChunkSnapshot.getBlockData(x, y + 1, z));
+                            continue;
+                        }
+
+                        for (int i = -2; i <= 2; i++)
+                            for (int j = -2; j <= 2; j++)
+                                for (int k = -2; k <= 2; k++) {
+                                    Location neighborLocation = originLocation.clone().add(i, j, k);
+                                    if (isNotInTheChunk(chunk, neighborLocation)) continue;
+
+                                    if (perversedBlocks.containsKey(neighborLocation)) {
+                                        perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+                                        break;
+                                    }
+                                }
+                    } else if (blockType.equals(Material.OBSIDIAN)) {
+                        for (int i = -1; i <= 1; i++)
+                            for (int j = -1; j <= 1; j++)
+                                for (int k = -1; k <= 1; k++) {
+                                    Location neighborLocation = originLocation.clone().add(i, j, k);
+                                    if (isNotInTheChunk(chunk, neighborLocation)) continue;
+
+                                    if (perversedBlocks.containsKey(neighborLocation)) {
+                                        perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+                                        break;
+                                    }
+                                }
+                    } else if (blockType.equals(Material.DRAGON_EGG)) {
+                        Location neighborLocation = originLocation.clone().add(0, -1, 0);
+                        if (perversedBlocks.containsKey(neighborLocation)) {
+                            perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+                        }
+                    } else if (blockType.equals(Material.TORCH)) {
+                        if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END))
+                            continue;
+
+                        for (int i = -1; i <= 1; i++)
+                            for (int k = -1; k <= 1; k++) {
+                                Location neighborLocation = originLocation.clone().add(i, 0, k);
+                                if (isNotInTheChunk(chunk, neighborLocation)) continue;
+
+                                if (perversedBlocks.containsKey(neighborLocation)) {
+                                    perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+                                    break;
+                                }
+                            }
+                    }
+                }
+            }
         }
 
-        location.getChunk().unload(true);
+        // todo: queue this instead of make it executed immediately.
+        setBlocksSynchronous(perversedBlocks);
+    }
+
+    private void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks) {
+        Bukkit.getScheduler().runTask(instance, () -> {
+            for (Location location : perversedBlocks.keySet()) {
+                BlockPos bp = new BlockPos(location.getX(), location.getY(), location.getZ());
+                ((CraftWorld) location.getWorld()).getHandle().setBlock(bp, ((CraftBlockData) perversedBlocks.get(location)).getState(), 3);
+            }
+        });
     }
 
     public File takeSnapshot(Chunk chunk) throws IOException {
@@ -196,11 +319,10 @@ public class Task {
 
         Chunk chunk = world.getChunkAt(Integer.parseInt(coordsInString[0]), Integer.parseInt(coordsInString[1]));
 
-        if (!chunk.isLoaded()) {
+        if (!chunk.isLoaded())
             chunk.load();
-        }
 
-        List<BlockWithPos> blockList = new ArrayList<>();
+        List<BlockStateWithPos> blockList = new ArrayList<>();
         List<NbtWithPos> nbtList = new ArrayList<>();
 
         while (true) {
@@ -212,8 +334,7 @@ public class Task {
                 argument = data.split(";");
 
                 if (argument.length == 5) {
-                    net.minecraft.world.level.block.Block block = ((CraftBlockData) Bukkit.createBlockData(argument[4])).getState().getBlock();
-                    blockList.add(new BlockWithPos(block, new Location(world, Integer.parseInt(argument[0]), Integer.parseInt(argument[1]), Integer.parseInt(argument[2]))));
+                    blockList.add(new BlockStateWithPos(((CraftBlockData) Bukkit.createBlockData(argument[4])).getState(), new Location(world, Integer.parseInt(argument[0]), Integer.parseInt(argument[1]), Integer.parseInt(argument[2]))));
                 } else {
                     nbtList.add(new NbtWithPos(argument[3], new Location(world, Integer.parseInt(argument[0]), Integer.parseInt(argument[1]), Integer.parseInt(argument[2]))));
                 }
@@ -225,9 +346,9 @@ public class Task {
 
         ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
 
-        for (BlockWithPos block : blockList) {
+        for (BlockStateWithPos block : blockList) {
             BlockPos bp = new BlockPos((chunk.getX() << 4) + block.getLocation().getX(), block.getLocation().getY(), (chunk.getZ() << 4) + block.getLocation().getZ());
-            nmsWorld.setBlock(bp, block.getBlock().defaultBlockState(), 3);
+            nmsWorld.setBlock(bp, block.getBlockState(), 3);
         }
 
         for (NbtWithPos nbtWithPos : nbtList) {
@@ -240,6 +361,20 @@ public class Task {
         }
 
         return chunk;
+    }
+
+    private static Location getMiddleOfLocation(Location location) {
+        Chunk chunk = location.getChunk();
+        return new Location(location.getWorld(), (chunk.getX() << 4) + 8, location.getBlockY(), (chunk.getZ() << 4) + 8);
+    }
+
+    private static boolean isNotInTheChunk(Chunk chunk, Location location) {
+        return location.getChunk().getX() != chunk.getX() || location.getChunk().getZ() != chunk.getZ();
+    }
+
+    // The method is hardcoded to detect the end gateway.
+    private static boolean isInSpecialChunks(Chunk chunk) {
+        return (chunk.getX() == 0 || chunk.getX() == -1) && (chunk.getZ() == 0 || chunk.getZ() == 1);
     }
 
     @Override

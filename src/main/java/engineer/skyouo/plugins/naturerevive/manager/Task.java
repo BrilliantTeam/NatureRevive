@@ -81,6 +81,21 @@ public class Task {
             }
         }
 
+        if (GriefPreventionAPI != null && NatureRevive.readonlyConfig.GriefPreventionStrictCheck){
+            Collection<Claim> GriefPrevention = GriefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+            if (GriefPrevention.size() > 0){
+
+                for (BlockState blockState : chunk.getTileEntities()){
+                    if (GriefPreventionAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()), true, null) != null){
+                        BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
+                        String nbt = tileEntity.saveWithFullMetadata().getAsString();
+
+                        nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), tileEntity.getBlockPos().getX(), tileEntity.getBlockPos().getY(), tileEntity.getBlockPos().getZ()));
+                    }
+                }
+            }
+        }
+
         location.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
 
         ObfuscateLootListener.randomizeChunkOre(chunk);
@@ -189,12 +204,17 @@ public class Task {
         Collection<Claim> GriefPrevention = GriefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
         if (GriefPrevention.size() > 0){
             for (int x = 0; x < 16; x++){
-                for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight(); y++){
+                for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight() - 1; y++) {
                     for (int z = 0; z < 16; z++){
                         Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (GriefPreventionAPI.getClaimAt(location, true, null) != null){
-                            BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                            perversedBlocks.put(targetLocation, block);
+                        if (GriefPreventionAPI.getClaimAt(targetLocation, true, null) != null){
+                            try {
+                                BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+                                perversedBlocks.put(targetLocation, block);
+                            }
+                            catch (Exception e){
+                                System.out.println(x + " " + y + " " + z);
+                            }
                         }
                     }
                 }

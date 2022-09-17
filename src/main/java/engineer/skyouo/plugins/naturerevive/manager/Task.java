@@ -165,7 +165,7 @@ public class Task {
 
             setBlocksSynchronous(perversedBlocks, tileEntities);
 
-            if (tileEntities.size() > 0) {
+            /*if (tileEntities.size() > 0) {
                 for (NbtWithPos tileEntityPos : tileEntities) {
                     BlockEntity tileEntity = (((CraftWorld) location.getWorld()).getHandle()).getBlockEntity(new BlockPos(tileEntityPos.getLocation().getX(), tileEntityPos.getLocation().getY(), tileEntityPos.getLocation().getZ()));
                     try {
@@ -174,7 +174,7 @@ public class Task {
                         e.printStackTrace();
                     }
                 }
-            }
+            }*/
         }
     }
 
@@ -280,18 +280,24 @@ public class Task {
     private void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks, List<NbtWithPos> tileEntities) {
         synchronized (blockStateWithPosQueue) {
             for (Location location : perversedBlocks.keySet()) {
-                boolean findTheNbt = false;
-                for (NbtWithPos nbtWithPos : tileEntities) {
-                    if (nbtWithPos.getLocation().equals(location)) {
-                        blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location, nbtWithPos.getNbt().getAsString()));
-                        findTheNbt = true;
-                        break;
-                    }
-                }
-                if (findTheNbt)
+                boolean findTheNbt = isFindTheNbt(perversedBlocks, tileEntities, location);
+
+                if (!findTheNbt)
                     blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location));
             }
         }
+    }
+
+    private boolean isFindTheNbt(Map<Location, BlockData> perversedBlocks, List<NbtWithPos> tileEntities, Location location) {
+        boolean findTheNbt = false;
+        for (NbtWithPos nbtWithPos : tileEntities) {
+            if (nbtWithPos.getLocation().equals(location)) {
+                blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location, nbtWithPos.getNbt().getAsString()));
+                findTheNbt = true;
+                break;
+            }
+        }
+        return findTheNbt;
     }
 
     public File takeSnapshot(Chunk chunk) throws IOException {

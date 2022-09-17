@@ -104,7 +104,7 @@ public final class NatureRevive extends JavaPlugin {
                 if (blockStateWithPos.getTileEntityNbt() != null) {
                     try {
                         ((CraftWorld) location.getWorld()).getHandle()
-                                .getBlockEntity(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()))
+                                .getBlockEntity(bp)
                                 .load(TagParser.parseTag(blockStateWithPos.getTileEntityNbt()));
                     } catch (CommandSyntaxException | NullPointerException e) {
                         e.printStackTrace();

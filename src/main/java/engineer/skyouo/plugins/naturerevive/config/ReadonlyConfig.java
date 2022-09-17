@@ -145,7 +145,7 @@ public class ReadonlyConfig {
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
         checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
-        blockPutPerTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
@@ -191,7 +191,7 @@ public class ReadonlyConfig {
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
         checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
-        blockPutPerTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));

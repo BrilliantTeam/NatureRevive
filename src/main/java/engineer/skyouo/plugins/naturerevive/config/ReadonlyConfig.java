@@ -15,7 +15,7 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 1;
+    public final int CONFIG_VERSION = 2;
 
     public boolean debug;
 
@@ -144,7 +144,7 @@ public class ReadonlyConfig {
 
     private void updateConfigurations(int version) {
         switch (version) {
-            case 1:
+            case 2:
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {

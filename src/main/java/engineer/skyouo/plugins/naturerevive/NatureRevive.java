@@ -16,7 +16,6 @@ import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -56,10 +55,6 @@ public final class NatureRevive extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-
-        residenceApi = ResidenceApi.getResidenceManager();
-        coreProtectAPI = CoreProtect.getInstance().isEnabled() ? CoreProtect.getInstance().getAPI() : null;
-        GriefPreventionAPI = GriefPrevention.instance.isEnabled() ? GriefPrevention.instance.dataStore : null;
 
         getCommand("snapshot").setExecutor(new SnapshotCommand(this));
         getCommand("revert").setExecutor(new RevertCommand(this));
@@ -115,26 +110,34 @@ public final class NatureRevive extends JavaPlugin {
     }
 
     private boolean ChickSoftDependPlugin(){
-        Plugin CoreProtect = getServer().getPluginManager().getPlugin("CoreProtect");
-        if (CoreProtect == null){
+        Plugin CoreProtectPlugin = getServer().getPluginManager().getPlugin("CoreProtect");
+        if (CoreProtectPlugin == null){
             logger.warning("CoreProtect plugin not found!");
             logger.warning("disable plugin!");
             return false;
         }
+        coreProtectAPI = CoreProtect.getInstance().isEnabled() ? CoreProtect.getInstance().getAPI() : null;
 
-        Plugin Residence = getServer().getPluginManager().getPlugin("Residence");
-        if (Residence == null && readonlyConfig.residenceStrictCheck){
+        if (readonlyConfig.residenceStrictCheck){
+            Plugin ResidencePlugin = getServer().getPluginManager().getPlugin("Residence");
+            if (ResidencePlugin == null){
+                logger.warning("Residence plugin not found!");
+                logger.warning("disable plugin!");
+                return false;
+            }
+            logger.info("Residence plugin found and Hook!");
             residenceApi = ResidenceApi.getResidenceManager();
-            logger.warning("Residence plugin not found!");
-            logger.warning("disable plugin!");
-            return false;
         }
 
-        Plugin GriefPrevention = getServer().getPluginManager().getPlugin("GriefPrevention");
-        if (GriefPrevention == null && readonlyConfig.GriefPreventionStrictCheck){
-            logger.warning("GriefPrevention plugin not found!");
-            logger.warning("disable plugin!");
-            return false;
+        if (readonlyConfig.GriefPreventionStrictCheck){
+            Plugin GriefPreventionPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
+            if (GriefPreventionPlugin == null){
+                logger.warning("GriefPrevention plugin not found!");
+                logger.warning("disable plugin!");
+                return false;
+            }
+            logger.info("GriefPrevention plugin found and Hook!");
+            GriefPreventionAPI = GriefPrevention.instance.isEnabled() ? GriefPrevention.instance.dataStore : null;
         }
 
         return true;

@@ -6,7 +6,7 @@
 
     <groupId>engineer.skyouo.plugins</groupId>
     <artifactId>NatureRevive</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>NatureRevive</name>
@@ -98,6 +98,10 @@
             <id>playpro-repo</id>
             <url>https://maven.playpro.com</url>
         </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -111,14 +115,20 @@
         <dependency>
             <groupId>com.bekvon.bukkit</groupId>
             <artifactId>residence</artifactId>
-            <version>5.0.2.0</version>
+            <version>5.0.3.0</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/libs/Residence5.0.2.0.jar</systemPath>
+            <systemPath>${project.basedir}/libs/Residence5.0.3.0.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>net.coreprotect</groupId>
             <artifactId>coreprotect</artifactId>
             <version>21.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.TechFortress</groupId>
+            <artifactId>GriefPrevention</artifactId>
+            <version>16.18</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

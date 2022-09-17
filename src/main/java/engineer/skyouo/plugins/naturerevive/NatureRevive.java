@@ -10,9 +10,13 @@ import engineer.skyouo.plugins.naturerevive.listeners.ObfuscateLootListener;
 import engineer.skyouo.plugins.naturerevive.manager.Queue;
 import engineer.skyouo.plugins.naturerevive.manager.Task;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
+import me.ryanhamshire.GriefPrevention.DataStore;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -26,6 +30,7 @@ public final class NatureRevive extends JavaPlugin {
 
     public static ResidenceInterface residenceApi;
     public static CoreProtectAPI coreProtectAPI;
+    public static DataStore GriefPreventionAPI;
 
     public static DatabaseConfig databaseConfig;
     public static ReadonlyConfig readonlyConfig;
@@ -45,10 +50,16 @@ public final class NatureRevive extends JavaPlugin {
         databaseConfig = new DatabaseConfig();
         readonlyConfig = new ReadonlyConfig();
 
+        logger = getLogger();
+
+        if (!ChickSoftDependPlugin()){
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         residenceApi = ResidenceApi.getResidenceManager();
         coreProtectAPI = CoreProtect.getInstance().isEnabled() ? CoreProtect.getInstance().getAPI() : null;
-
-        logger = getLogger();
+        GriefPreventionAPI = GriefPrevention.instance.isEnabled() ? GriefPrevention.instance.dataStore : null;
 
         getCommand("snapshot").setExecutor(new SnapshotCommand(this));
         getCommand("revert").setExecutor(new RevertCommand(this));
@@ -74,6 +85,7 @@ public final class NatureRevive extends JavaPlugin {
                 for (int i = 0; i < readonlyConfig.taskPerProcess; i++) {
                     Task task = queue.pop();
                     if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck) return;
+                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.GriefPreventionStrictCheck) return;
                     task.regenerateChunk();
                     if (readonlyConfig.debug)
                         logger.info(task.toString() + " was regenerated.");
@@ -100,5 +112,31 @@ public final class NatureRevive extends JavaPlugin {
             e.printStackTrace();
         }
 
+    }
+
+    private boolean ChickSoftDependPlugin(){
+        Plugin CoreProtect = getServer().getPluginManager().getPlugin("CoreProtect");
+        if (CoreProtect == null){
+            logger.warning("CoreProtect plugin not found!");
+            logger.warning("disable plugin!");
+            return false;
+        }
+
+        Plugin Residence = getServer().getPluginManager().getPlugin("Residence");
+        if (Residence == null && readonlyConfig.residenceStrictCheck){
+            residenceApi = ResidenceApi.getResidenceManager();
+            logger.warning("Residence plugin not found!");
+            logger.warning("disable plugin!");
+            return false;
+        }
+
+        Plugin GriefPrevention = getServer().getPluginManager().getPlugin("GriefPrevention");
+        if (GriefPrevention == null && readonlyConfig.GriefPreventionStrictCheck){
+            logger.warning("GriefPrevention plugin not found!");
+            logger.warning("disable plugin!");
+            return false;
+        }
+
+        return true;
     }
 }

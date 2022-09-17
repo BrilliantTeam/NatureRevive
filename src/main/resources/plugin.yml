@@ -2,7 +2,7 @@ name: NatureRevive
 version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.NatureRevive
 api-version: 1.19
-softdepend: [Residence, CoreProtect]
+softdepend: [Residence, CoreProtect, GriefPrevention]
 website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
 commands:
   snapshot:

@@ -20,6 +20,7 @@ public class ReadonlyConfig {
     public boolean debug;
 
     public boolean residenceStrictCheck;
+    public boolean GriefPreventionStrictCheck;
 
     public boolean saferOreObfuscation;
 
@@ -85,6 +86,12 @@ public class ReadonlyConfig {
                     "Whether to enable the experimental function that if the expired chunk has residences in it, put all blocks in residences to new chunk instead of skipping chunk.",
                     "Demo: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5"));
 
+            configuration.set("griefprevention-strict-check", false);
+            configuration.setComments("griefprevention-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GP領地範圍內的方塊 功能",
+                    "演示影片: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5",
+                    "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention to new chunk instead of skipping chunk.",
+                    "Demo: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5"));
+
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComments("coreprotect-log-username", Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",
                     "演示圖片: https://media.discordapp.net/attachments/934304177134370847/1018496146441764954/AddText_09-11-08.12.27.png",
@@ -121,6 +128,7 @@ public class ReadonlyConfig {
 
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
+        GriefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
@@ -152,6 +160,7 @@ public class ReadonlyConfig {
 
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
+        GriefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", true);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);

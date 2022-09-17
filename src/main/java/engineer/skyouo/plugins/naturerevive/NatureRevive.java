@@ -27,9 +27,9 @@ public final class NatureRevive extends JavaPlugin {
         ConfigurationSerialization.registerClass(PositionInfo.class, "PositionInfo");
     }
 
-    public static ResidenceInterface residenceApi;
+    public static ResidenceInterface residenceAPI;
     public static CoreProtectAPI coreProtectAPI;
-    public static DataStore GriefPreventionAPI;
+    public static DataStore griefPreventionAPI;
 
     public static DatabaseConfig databaseConfig;
     public static ReadonlyConfig readonlyConfig;
@@ -51,8 +51,8 @@ public final class NatureRevive extends JavaPlugin {
 
         logger = getLogger();
 
-        if (!ChickSoftDependPlugin()){
-            logger.warning("disable plugin!");
+        if (!checkSoftDependPlugins()){
+            logger.warning("Disabling plugin due to lack of dependencies and enable the feature requires extra dependencies!");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
@@ -81,7 +81,7 @@ public final class NatureRevive extends JavaPlugin {
                 for (int i = 0; i < readonlyConfig.taskPerProcess; i++) {
                     Task task = queue.pop();
                     if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck) return;
-                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.GriefPreventionStrictCheck) return;
+                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck) return;
                     task.regenerateChunk();
                     if (readonlyConfig.debug)
                         logger.info(task.toString() + " was regenerated.");
@@ -110,34 +110,37 @@ public final class NatureRevive extends JavaPlugin {
 
     }
 
-    private boolean ChickSoftDependPlugin(){
-        Plugin coreProtectPlugin = getServer().getPluginManager().getPlugin("CoreProtect");
+    public static boolean checkSoftDependPlugins(){
+        Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
         coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
         if (coreProtectAPI != null){
-            logger.info("CoreProtect plugin found and Hook!");
+            logger.info("CoreProtect plugin is found and hooked!");
         }
 
 
-        Plugin residencePlugin = getServer().getPluginManager().getPlugin("Residence");
-        residenceApi = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
-        if (residenceApi == null){
-            logger.warning("Residence plugin not found!");
-            if (readonlyConfig.residenceStrictCheck){
+        Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
+        residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
+        if (residenceAPI == null) {
+            logger.warning("Residence plugin is not found, will not support GriefPrevention's features!");
+            if (readonlyConfig.residenceStrictCheck) {
+
                 return false;
             }
         }
-        logger.info("Residence plugin found and Hook!");
+        logger.info("Residence plugin is found and hooked!");
 
 
-        Plugin GriefPreventionPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
-        GriefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
-        if (GriefPreventionAPI == null){
-            logger.warning("GriefPrevention plugin not found!");
-            if (readonlyConfig.GriefPreventionStrictCheck){
+        Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
+        griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+
+        if (griefPreventionAPI == null) {
+            logger.warning("GriefPrevention plugin is not found, will not support GriefPrevention's features!");
+
+            if (readonlyConfig.griefPreventionStrictCheck) {
                 return false;
             }
         }
-        logger.info("GriefPrevention plugin found and Hook!");
+        logger.info("GriefPrevention plugin is found and hooked!");
 
         return true;
     }

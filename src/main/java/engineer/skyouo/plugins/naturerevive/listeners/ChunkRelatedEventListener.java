@@ -104,14 +104,14 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     protected static void flagChunk(Location location) {
-        if (NatureRevive.residenceApi != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevive.residenceApi.getByLoc(location) != null) {
+        if (NatureRevive.residenceAPI != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
+            if (NatureRevive.residenceAPI.getByLoc(location) != null) {
                 return;
             }
         }
 
-        if (NatureRevive.GriefPreventionAPI != null && !NatureRevive.readonlyConfig.GriefPreventionStrictCheck){
-            if (NatureRevive.GriefPreventionAPI.getClaimAt(location, true, null) != null){
+        if (NatureRevive.griefPreventionAPI != null && !NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            if (NatureRevive.griefPreventionAPI.getClaimAt(location, true, null) != null){
                 return;
             }
         }
@@ -122,14 +122,14 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     private void log(Event event, Location location) {
-        if (NatureRevive.residenceApi != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevive.residenceApi.getByLoc(location) != null) {
+        if (NatureRevive.residenceAPI != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
+            if (NatureRevive.residenceAPI.getByLoc(location) != null) {
                 return;
             }
         }
 
-        if (NatureRevive.GriefPreventionAPI != null && !NatureRevive.readonlyConfig.GriefPreventionStrictCheck){
-            if (NatureRevive.GriefPreventionAPI.getClaimAt(location, true, null) != null){
+        if (NatureRevive.griefPreventionAPI != null && !NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            if (NatureRevive.griefPreventionAPI.getClaimAt(location, true, null) != null){
                 return;
             }
         }

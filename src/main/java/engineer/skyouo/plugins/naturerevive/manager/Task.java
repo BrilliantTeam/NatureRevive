@@ -66,12 +66,12 @@ public class Task {
         ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot();
 
         // todo: make this asynchronous.
-        if (residenceApi != null && NatureRevive.readonlyConfig.residenceStrictCheck) {
-            List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
+        if (residenceAPI != null && NatureRevive.readonlyConfig.residenceStrictCheck) {
+            List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
             if (residences.size() > 0) {
 
                 for (BlockState blockState : chunk.getTileEntities()) {
-                    if (residenceApi.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
+                    if (residenceAPI.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
                         BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
                         String nbt = tileEntity.saveWithFullMetadata().getAsString();
 
@@ -81,12 +81,12 @@ public class Task {
             }
         }
 
-        if (GriefPreventionAPI != null && NatureRevive.readonlyConfig.GriefPreventionStrictCheck){
-            Collection<Claim> GriefPrevention = GriefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
-            if (GriefPrevention.size() > 0){
+        if (griefPreventionAPI != null && NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            Collection<Claim> GriefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+            if (GriefPrevention.size() > 0) {
 
                 for (BlockState blockState : chunk.getTileEntities()){
-                    if (GriefPreventionAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()), true, null) != null){
+                    if (griefPreventionAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()), true, null) != null){
                         BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
                         String nbt = tileEntity.saveWithFullMetadata().getAsString();
 
@@ -123,11 +123,11 @@ public class Task {
         Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
                 savingMovableStructure(chunk, oldChunkSnapshot);
 
-                if (residenceApi != null && readonlyConfig.residenceStrictCheck)
+                if (residenceAPI != null && readonlyConfig.residenceStrictCheck)
                     residenceOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
-                if (GriefPreventionAPI != null && readonlyConfig.GriefPreventionStrictCheck){
-                    GriefPreventionOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
+                if (griefPreventionAPI != null && readonlyConfig.griefPreventionStrictCheck){
+                    griefPreventionOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
                 }
 
                 if (coreProtectAPI != null)
@@ -169,13 +169,13 @@ public class Task {
     private void residenceOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
         Map<Location, BlockData> perversedBlocks = new HashMap<>();
 
-        List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
+        List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
         if (residences.size() > 0) {
             for (int x = 0; x < 16; x++) {
                 for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight(); y++) {
                     for (int z = 0; z < 16; z++) {
                         Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (residenceApi.getByLoc(targetLocation) != null) {
+                        if (residenceAPI.getByLoc(targetLocation) != null) {
                             BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
                             perversedBlocks.put(targetLocation, block);
                         }
@@ -198,22 +198,21 @@ public class Task {
         }
     }
 
-    private void GriefPreventionOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities){
+    private void griefPreventionOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities){
         Map<Location, BlockData> perversedBlocks = new HashMap<>();
 
-        Collection<Claim> GriefPrevention = GriefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
-        if (GriefPrevention.size() > 0){
-            for (int x = 0; x < 16; x++){
+        Collection<Claim> GriefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+        if (GriefPrevention.size() > 0) {
+            for (int x = 0; x < 16; x++) {
                 for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight() - 1; y++) {
-                    for (int z = 0; z < 16; z++){
+                    for (int z = 0; z < 16; z++) {
                         Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (GriefPreventionAPI.getClaimAt(targetLocation, true, null) != null){
+                        if (griefPreventionAPI.getClaimAt(targetLocation, true, null) != null){
                             try {
                                 BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
                                 perversedBlocks.put(targetLocation, block);
-                            }
-                            catch (Exception e){
-                                System.out.println(x + " " + y + " " + z);
+                            } catch (Exception e){
+                                e.printStackTrace();
                             }
                         }
                     }

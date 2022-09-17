@@ -1,7 +1,7 @@
 # NatureRevive | 資源再生，告別資源界！
 遊戲版本: 1.19.2
 
-Spigot: <br>
+Spigot: 暫無<br>
 巴哈介紹: 
 ---
 

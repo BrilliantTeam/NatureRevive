@@ -9,10 +9,15 @@ import engineer.skyouo.plugins.naturerevive.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.listeners.ObfuscateLootListener;
 import engineer.skyouo.plugins.naturerevive.manager.Queue;
 import engineer.skyouo.plugins.naturerevive.manager.Task;
+import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
+import net.minecraft.core.BlockPos;
+import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -34,7 +39,8 @@ public final class NatureRevive extends JavaPlugin {
 
     public static JavaPlugin instance;
 
-    public static Queue queue = new Queue();
+    public static final Queue<Task> queue = new Queue<>();
+    public static final Queue<BlockStateWithPos> blockStateWithPosQueue = new Queue<>();
 
     @Override
     public void onEnable() {
@@ -71,15 +77,29 @@ public final class NatureRevive extends JavaPlugin {
 
         getServer().getScheduler().runTaskTimer(this, () -> {
             if (queue.size() > 0) {
-                for (int i = 0; i < readonlyConfig.taskPerProcess; i++) {
+                for (int i = 0; i < readonlyConfig.taskPerProcess && queue.hasNext(); i++) {
                     Task task = queue.pop();
+
                     if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck) return;
+
                     task.regenerateChunk();
+
                     if (readonlyConfig.debug)
                         logger.info(task.toString() + " was regenerated.");
                 }
             }
         }, 20L, readonlyConfig.queuePerNTick);
+
+        getServer().getScheduler().runTaskTimer(this, () -> {
+            for (int i = 0; i < readonlyConfig.blockPutPerTick && blockStateWithPosQueue.hasNext(); i++) {
+                BlockStateWithPos blockStateWithPos = blockStateWithPosQueue.pop();
+
+                Location location = blockStateWithPos.getLocation();
+
+                BlockPos bp = new BlockPos(location.getX(), location.getY(), location.getZ());
+                ((CraftWorld) location.getWorld()).getHandle().setBlock(bp, blockStateWithPos.getBlockState(), 3);
+            }
+        }, 20L, readonlyConfig.blockPutActionPerNTick);
 
         getServer().getScheduler().runTaskTimer(this, () -> {
             try {

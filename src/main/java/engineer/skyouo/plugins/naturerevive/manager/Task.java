@@ -278,12 +278,11 @@ public class Task {
     }
 
     private void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks) {
-        Bukkit.getScheduler().runTask(instance, () -> {
+        synchronized (blockStateWithPosQueue) {
             for (Location location : perversedBlocks.keySet()) {
-                BlockPos bp = new BlockPos(location.getX(), location.getY(), location.getZ());
-                ((CraftWorld) location.getWorld()).getHandle().setBlock(bp, ((CraftBlockData) perversedBlocks.get(location)).getState(), 3);
+                blockStateWithPosQueue.add(new BlockStateWithPos(((CraftBlockData) perversedBlocks.get(location)).getState(), location));
             }
-        });
+        }
     }
 
     public File takeSnapshot(Chunk chunk) throws IOException {

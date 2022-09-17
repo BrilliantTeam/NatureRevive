@@ -29,6 +29,10 @@ public class ReadonlyConfig {
 
     public int queuePerNTick;
 
+    public int blockPutPerTick;
+
+    public int blockPutActionPerNTick;
+
     public int checkChunkTTLTick;
 
     public int dataSaveTime;
@@ -106,8 +110,22 @@ public class ReadonlyConfig {
             configuration.setComments("safer-ore-obfuscation", Arrays.asList(
                     "該選項將限制礦物混淆系統強制於高度 40 以下替換礦物 (僅主世界)，並且將會嚴格限制替換的方塊種類為 石頭 / 深板岩 (主世界) 或 地獄石 (地獄)",
                     "當礦物混淆產生的礦物錯位時，再考慮開啟此選項，開啟此選項後 y > 40 的區域將不會生成任何礦物",
-                    "This option will force ore obfuscation system to replaces ore block to under y = 40 in overworld, and will limit the target block to stone / deepslate (overworld) or netherrack (nether) to prevent odd behavior.",
-                    "Please only consider to enable it when the obfuscated ores are glitched (like spawning at ground, spawn above water etc.), when this feature is on, the region y > 40 will NOT generate any ores.")
+                    "This option will force ore obfuscation system to replace ore block to under y = 40 in overworld, and will limit the target block to stone / deepslate (overworld) or netherrack (nether) to prevent odd behavior.",
+                    "Please only consider to enable it when the obfuscated ores are glitched (like spawning ores at ground, spawning ores above water etc.), when this feature is on, the region y > 40 will NOT generate any ores.")
+            );
+
+            configuration.set("block-put-per-tick", 1024);
+            configuration.setComments("block-put-per-tick", Arrays.asList(
+                    "每次區域放置的保留方塊數量，倘若無特殊情況，請保持在默認值",
+                    "How many blocks to put for residences/structures reserved action.",
+                    "Please leave it as it is if your server does not have a bunch of structures/residences in a chunk."
+            ));
+
+            configuration.set("block-put-action-per-n-tick", 10);
+            configuration.setComments("block-put-per-tick", Arrays.asList(
+                    "每 n 個 tick 檢查是否有需要保留的方塊等待放置, 倘若該數值被設置的過久的話玩家將可能見到終界折躍門方塊突然消失, 又再次出現.",
+                    "Check whether the queue has blocks need to put every n tick(s), if the value is set too high, player in the center of the end might see the end gateway suddenly vanished then appeared."
+                    )
             );
 
             try {
@@ -127,6 +145,8 @@ public class ReadonlyConfig {
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
         checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
+        blockPutPerTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
@@ -137,6 +157,19 @@ public class ReadonlyConfig {
     private void updateConfigurations(int version) {
         switch (version) {
             case 1:
+                configuration.set("block-put-per-tick", 1024);
+                configuration.setComments("block-put-per-tick", Arrays.asList(
+                        "每次區域放置的保留方塊數量，倘若無特殊情況，請保持在默認值",
+                        "How many blocks to put for residences/structures reserved action.",
+                        "Please leave it as it is if your server does not have a bunch of structures/residences in a chunk."
+                ));
+
+                configuration.set("block-put-action-per-n-tick", 10);
+                configuration.setComments("block-put-per-tick", Arrays.asList(
+                        "每 n 個 tick 檢查是否有需要保留的方塊等待放置, 倘若該數值被設置的過久的話玩家將可能見到終界折躍門方塊突然消失, 又再次出現.",
+                        "Check whether the queue has blocks need to put every n tick(s), if the value is set too high, player in the center of the end might see the end gateway suddenly vanished then appeared."
+                        )
+                );
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -152,12 +185,14 @@ public class ReadonlyConfig {
 
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
-        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", true);
+        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
         checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
+        blockPutPerTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");

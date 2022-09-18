@@ -12,6 +12,8 @@ import engineer.skyouo.plugins.naturerevive.manager.Queue;
 import engineer.skyouo.plugins.naturerevive.manager.Task;
 import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
+import me.ryanhamshire.GriefPrevention.DataStore;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import net.minecraft.core.BlockPos;
@@ -20,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.block.data.CraftBlockData;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -31,8 +34,9 @@ public final class NatureRevive extends JavaPlugin {
         ConfigurationSerialization.registerClass(PositionInfo.class, "PositionInfo");
     }
 
-    public static ResidenceInterface residenceApi;
+    public static ResidenceInterface residenceAPI;
     public static CoreProtectAPI coreProtectAPI;
+    public static DataStore griefPreventionAPI;
 
     public static DatabaseConfig databaseConfig;
     public static ReadonlyConfig readonlyConfig;
@@ -53,10 +57,13 @@ public final class NatureRevive extends JavaPlugin {
         databaseConfig = new DatabaseConfig();
         readonlyConfig = new ReadonlyConfig();
 
-        residenceApi = ResidenceApi.getResidenceManager();
-        coreProtectAPI = CoreProtect.getInstance().isEnabled() ? CoreProtect.getInstance().getAPI() : null;
-
         logger = getLogger();
+
+        if (!checkSoftDependPlugins()){
+            logger.warning("Disabling plugin due to lack of dependencies and enable the feature requires extra dependencies!");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
 
         getCommand("snapshot").setExecutor(new SnapshotCommand(this));
         getCommand("revert").setExecutor(new RevertCommand(this));
@@ -84,6 +91,7 @@ public final class NatureRevive extends JavaPlugin {
 
                     if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck) return;
 
+                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck) return;
                     task.regenerateChunk();
 
                     if (readonlyConfig.debug)
@@ -132,5 +140,40 @@ public final class NatureRevive extends JavaPlugin {
             e.printStackTrace();
         }
 
+    }
+
+    public static boolean checkSoftDependPlugins(){
+        Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
+        coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
+        if (coreProtectAPI != null){
+            logger.info("CoreProtect plugin is found and hooked!");
+        }
+
+
+        Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
+        residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
+        if (residenceAPI == null) {
+            logger.warning("Residence plugin is not found, will not support GriefPrevention's features!");
+            if (readonlyConfig.residenceStrictCheck) {
+
+                return false;
+            }
+        }
+        logger.info("Residence plugin is found and hooked!");
+
+
+        Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
+        griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+
+        if (griefPreventionAPI == null) {
+            logger.warning("GriefPrevention plugin is not found, will not support GriefPrevention's features!");
+
+            if (readonlyConfig.griefPreventionStrictCheck) {
+                return false;
+            }
+        }
+        logger.info("GriefPrevention plugin is found and hooked!");
+
+        return true;
     }
 }

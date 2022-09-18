@@ -13,6 +13,7 @@ public class ReloadCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         try {
             NatureRevive.readonlyConfig.reloadConfig();
+            NatureRevive.checkSoftDependPlugins();
             sender.sendMessage(ChatColor.translateAlternateColorCodes(
                     '&', NatureRevive.readonlyConfig.reloadSuccessMessage
             ));

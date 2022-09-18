@@ -1,10 +1,7 @@
 package engineer.skyouo.plugins.naturerevive.listeners;
 
-import com.bekvon.bukkit.residence.api.ResidenceApi;
 import engineer.skyouo.plugins.naturerevive.NatureRevive;
-import engineer.skyouo.plugins.naturerevive.structs.ChunkPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -12,7 +9,10 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.*;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockCookEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.BrewEvent;
@@ -104,8 +104,14 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     protected static void flagChunk(Location location) {
-        if (NatureRevive.residenceApi != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevive.residenceApi.getByLoc(location) != null) {
+        if (NatureRevive.residenceAPI != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
+            if (NatureRevive.residenceAPI.getByLoc(location) != null) {
+                return;
+            }
+        }
+
+        if (NatureRevive.griefPreventionAPI != null && !NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            if (NatureRevive.griefPreventionAPI.getClaimAt(location, true, null) != null){
                 return;
             }
         }
@@ -116,8 +122,14 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     private void log(Event event, Location location) {
-        if (NatureRevive.residenceApi != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevive.residenceApi.getByLoc(location) != null) {
+        if (NatureRevive.residenceAPI != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
+            if (NatureRevive.residenceAPI.getByLoc(location) != null) {
+                return;
+            }
+        }
+
+        if (NatureRevive.griefPreventionAPI != null && !NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            if (NatureRevive.griefPreventionAPI.getClaimAt(location, true, null) != null){
                 return;
             }
         }

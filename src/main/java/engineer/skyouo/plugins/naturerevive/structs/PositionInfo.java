@@ -8,6 +8,7 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static engineer.skyouo.plugins.naturerevive.NatureRevive.GriefPreventionAPI;
 import static engineer.skyouo.plugins.naturerevive.NatureRevive.residenceApi;
 
 @SerializableAs("PositionInfo")
@@ -27,6 +28,10 @@ public class PositionInfo implements ConfigurationSerializable {
 
     public static boolean isResidence(Location location) {
         return residenceApi != null && ((ResidenceManager) residenceApi).getByChunk(location.getChunk()).size() != 0;
+    }
+
+    public static boolean isGriefPrevention(Location location){
+        return GriefPreventionAPI != null && GriefPreventionAPI.getClaims(location.getChunk().getX(), location.getChunk().getZ()).size() != 0;
     }
 
     public boolean isOverTTL() {

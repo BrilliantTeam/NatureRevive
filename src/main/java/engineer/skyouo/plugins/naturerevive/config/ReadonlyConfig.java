@@ -142,7 +142,7 @@ public class ReadonlyConfig {
 
     private void updateConfigurations(int version) {
         switch (version) {
-            case 2:
+            case 1:
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {

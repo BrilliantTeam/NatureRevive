@@ -1,6 +1,5 @@
 package engineer.skyouo.plugins.naturerevive;
 
-import com.bekvon.bukkit.residence.Residence;
 import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.api.ResidenceInterface;
 import engineer.skyouo.plugins.naturerevive.commands.*;
@@ -16,6 +15,7 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -111,14 +111,15 @@ public final class NatureRevive extends JavaPlugin {
     }
 
     private boolean ChickSoftDependPlugin(){
-        coreProtectAPI = CoreProtect.getInstance().isEnabled() ? CoreProtect.getInstance().getAPI() : null;
-        if (coreProtectAPI == null){
-            logger.warning("CoreProtect plugin not found!");
-            return false;
+        Plugin coreProtectPlugin = getServer().getPluginManager().getPlugin("CoreProtect");
+        coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
+        if (coreProtectAPI != null){
+            logger.info("CoreProtect plugin found and Hook!");
         }
 
         if (readonlyConfig.residenceStrictCheck){
-            residenceApi = Residence.getInstance().isEnabled() ? ResidenceApi.getResidenceManager() : null;
+            Plugin residencePlugin = getServer().getPluginManager().getPlugin("Residence");
+            residenceApi = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
             if (residenceApi == null){
                 logger.warning("Residence plugin not found!");
                 return false;
@@ -127,7 +128,8 @@ public final class NatureRevive extends JavaPlugin {
         }
 
         if (readonlyConfig.GriefPreventionStrictCheck){
-            GriefPreventionAPI = GriefPrevention.instance.isEnabled() ? GriefPrevention.instance.dataStore : null;
+            Plugin GriefPreventionPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
+            GriefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
             if (GriefPreventionAPI == null){
                 logger.warning("GriefPrevention plugin not found!");
                 return false;

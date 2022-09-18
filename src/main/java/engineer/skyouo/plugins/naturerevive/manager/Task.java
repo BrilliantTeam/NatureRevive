@@ -8,9 +8,11 @@ import com.google.common.io.ByteStreams;
 import engineer.skyouo.plugins.naturerevive.NatureRevive;
 import engineer.skyouo.plugins.naturerevive.constants.OreBlocks;
 import engineer.skyouo.plugins.naturerevive.listeners.ObfuscateLootListener;
+import engineer.skyouo.plugins.naturerevive.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.NbtWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
+import me.ryanhamshire.GriefPrevention.Claim;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -65,12 +67,27 @@ public class Task {
         ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot();
 
         // todo: make this asynchronous.
-        if (residenceApi != null && NatureRevive.readonlyConfig.residenceStrictCheck) {
-            List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
+        if (residenceAPI != null && NatureRevive.readonlyConfig.residenceStrictCheck) {
+            List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
             if (residences.size() > 0) {
 
                 for (BlockState blockState : chunk.getTileEntities()) {
-                    if (residenceApi.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
+                    if (residenceAPI.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
+                        BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
+                        String nbt = tileEntity.saveWithFullMetadata().getAsString();
+
+                        nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), tileEntity.getBlockPos().getX(), tileEntity.getBlockPos().getY(), tileEntity.getBlockPos().getZ()));
+                    }
+                }
+            }
+        }
+
+        if (griefPreventionAPI != null && NatureRevive.readonlyConfig.griefPreventionStrictCheck){
+            Collection<Claim> GriefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+            if (GriefPrevention.size() > 0) {
+
+                for (BlockState blockState : chunk.getTileEntities()){
+                    if (griefPreventionAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()), true, null) != null){
                         BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
                         String nbt = tileEntity.saveWithFullMetadata().getAsString();
 
@@ -107,8 +124,12 @@ public class Task {
         Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
                 savingMovableStructure(chunk, oldChunkSnapshot);
 
-                if (residenceApi != null && readonlyConfig.residenceStrictCheck)
+                if (residenceAPI != null && readonlyConfig.residenceStrictCheck)
                     residenceOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
+
+                if (griefPreventionAPI != null && readonlyConfig.griefPreventionStrictCheck){
+                    griefPreventionOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
+                }
 
                 if (coreProtectAPI != null)
                     coreProtectAPILogging(chunk, oldChunkSnapshot);
@@ -118,26 +139,35 @@ public class Task {
     }
 
     private void coreProtectAPILogging(Chunk chunk, ChunkSnapshot oldChunkSnapshot) {
-        for (int x = 0; x < 16; x++) {
-            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight(); y++) {
-                for (int z = 0; z < 16; z++) {
-                    Block newBlock = chunk.getBlock(x, y, z);
+        synchronized (blockDataChangeWithPos) {
+            for (int x = 0; x < 16; x++) {
+                for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight(); y++) {
+                    for (int z = 0; z < 16; z++) {
+                        Block newBlock = chunk.getBlock(x, y, z);
 
-                    Material oldBlockType = oldChunkSnapshot.getBlockType(x, y, z);
-                    Material newBlockType = newBlock.getType();
+                        Material oldBlockType = oldChunkSnapshot.getBlockType(x, y, z);
+                        Material newBlockType = newBlock.getType();
 
-                    if (OreBlocks.contains(oldBlockType)) continue;
+                        if (OreBlocks.contains(oldBlockType)) continue;
 
-                    if (!oldBlockType.equals(newBlockType)) {
-                        Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (oldBlockType.equals(Material.AIR)) {
-                            coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
-                        } else {
+                        if (!oldBlockType.equals(newBlockType)) {
+                            Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
                             BlockData oldBlockData = oldChunkSnapshot.getBlockData(x, y, z);
+                            BlockData newBlockData = newBlock.getBlockData();
+                            if (oldBlockType.equals(Material.AIR)) {
+                                // new block put
+                                //coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
+                                blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.PLACEMENT));
+                            } else {
+                                // Block break
 
-                            coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, location, oldBlockType, oldBlockData);
-                            if (newBlockType.equals(Material.AIR)) {
-                                coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
+                                //coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, location, oldBlockType, oldBlockData);
+                                if (!newBlockType.equals(Material.AIR)) {
+                                    blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.REPLACE));
+                                    //coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
+                                } else {
+                                    blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.REMOVAL));
+                                }
                             }
                         }
                     }
@@ -149,13 +179,13 @@ public class Task {
     private void residenceOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
         Map<Location, BlockData> perversedBlocks = new HashMap<>();
 
-        List<ClaimedResidence> residences = ((ResidenceManager) residenceApi).getByChunk(chunk);
+        List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
         if (residences.size() > 0) {
             for (int x = 0; x < 16; x++) {
                 for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight(); y++) {
                     for (int z = 0; z < 16; z++) {
                         Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (residenceApi.getByLoc(targetLocation) != null) {
+                        if (residenceAPI.getByLoc(targetLocation) != null) {
                             BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
                             perversedBlocks.put(targetLocation, block);
                         }
@@ -175,6 +205,31 @@ public class Task {
                     }
                 }
             }*/
+        }
+    }
+
+    private void griefPreventionOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities){
+        Map<Location, BlockData> perversedBlocks = new HashMap<>();
+
+        Collection<Claim> GriefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+        if (GriefPrevention.size() > 0) {
+            for (int x = 0; x < 16; x++) {
+                for (int y = chunk.getWorld().getMinHeight(); y <= chunk.getWorld().getMaxHeight() - 1; y++) {
+                    for (int z = 0; z < 16; z++) {
+                        Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+                        if (griefPreventionAPI.getClaimAt(targetLocation, true, null) != null){
+                            try {
+                                BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+                                perversedBlocks.put(targetLocation, block);
+                            } catch (Exception e){
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }
+
+            setBlocksSynchronous(perversedBlocks, tileEntities);
         }
     }
 
@@ -273,7 +328,6 @@ public class Task {
             }
         }
 
-        // todo: queue this instead of make it executed immediately.
         setBlocksSynchronous(perversedBlocks, Collections.EMPTY_LIST);
     }
 

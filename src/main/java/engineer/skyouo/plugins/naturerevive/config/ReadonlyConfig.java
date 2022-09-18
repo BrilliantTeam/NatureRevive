@@ -15,11 +15,12 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 1;
+    public final int CONFIG_VERSION = 3;
 
     public boolean debug;
 
     public boolean residenceStrictCheck;
+    public boolean griefPreventionStrictCheck;
 
     public boolean saferOreObfuscation;
 
@@ -89,6 +90,12 @@ public class ReadonlyConfig {
                     "Whether to enable the experimental function that if the expired chunk has residences in it, put all blocks in residences to new chunk instead of skipping chunk.",
                     "Demo: https://www.youtube.com/watch?v=OOm7FVhG7fk&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=5"));
 
+            configuration.set("griefprevention-strict-check", false);
+            configuration.setComments("griefprevention-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GP領地範圍內的方塊 功能",
+                    "演示影片: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7",
+                    "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention's claims to new chunk instead of skipping chunk.",
+                    "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7"));
+
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComments("coreprotect-log-username", Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",
                     "演示圖片: https://media.discordapp.net/attachments/934304177134370847/1018496146441764954/AddText_09-11-08.12.27.png",
@@ -122,7 +129,7 @@ public class ReadonlyConfig {
             ));
 
             configuration.set("block-put-action-per-n-tick", 10);
-            configuration.setComments("block-put-per-tick", Arrays.asList(
+            configuration.setComments("block-put-action-per-n-tick", Arrays.asList(
                     "每 n 個 tick 檢查是否有需要保留的方塊等待放置, 倘若該數值被設置的過久的話玩家將可能見到終界折躍門方塊突然消失, 又再次出現.",
                     "Check whether the queue has blocks need to put every n tick(s), if the value is set too high, player in the center of the end might see the end gateway suddenly vanished then appeared."
                     )
@@ -139,6 +146,7 @@ public class ReadonlyConfig {
 
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
+        griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
@@ -157,6 +165,12 @@ public class ReadonlyConfig {
     private void updateConfigurations(int version) {
         switch (version) {
             case 1:
+                configuration.set("griefprevention-strict-check", false);
+                configuration.setComments("griefprevention-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GP領地範圍內的方塊 功能",
+                        "演示影片: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7",
+                        "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention's claims to new chunk instead of skipping chunk.",
+                        "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7"));
+            case 2:
                 configuration.set("block-put-per-tick", 1024);
                 configuration.setComments("block-put-per-tick", Arrays.asList(
                         "每次區域放置的保留方塊數量，倘若無特殊情況，請保持在默認值",
@@ -165,11 +179,13 @@ public class ReadonlyConfig {
                 ));
 
                 configuration.set("block-put-action-per-n-tick", 10);
-                configuration.setComments("block-put-per-tick", Arrays.asList(
+                configuration.setComments("block-put-action-per-n-tick", Arrays.asList(
                         "每 n 個 tick 檢查是否有需要保留的方塊等待放置, 倘若該數值被設置的過久的話玩家將可能見到終界折躍門方塊突然消失, 又再次出現.",
                         "Check whether the queue has blocks need to put every n tick(s), if the value is set too high, player in the center of the end might see the end gateway suddenly vanished then appeared."
                         )
                 );
+            case 3:
+
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -185,7 +201,8 @@ public class ReadonlyConfig {
 
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
-        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
+        griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
+        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", true);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);

@@ -143,6 +143,9 @@ public class ReadonlyConfig {
     private void updateConfigurations(int version) {
         switch (version) {
             case 1:
+                configuration.set("griefprevention-strict-check", false);
+                configuration.setComments("griefprevention-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GP領地範圍內的方塊 功能",
+                        "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention to new chunk instead of skipping chunk."));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {

@@ -117,25 +117,27 @@ public final class NatureRevive extends JavaPlugin {
             logger.info("CoreProtect plugin found and Hook!");
         }
 
-        if (readonlyConfig.residenceStrictCheck){
-            Plugin residencePlugin = getServer().getPluginManager().getPlugin("Residence");
-            residenceApi = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
-            if (residenceApi == null){
-                logger.warning("Residence plugin not found!");
-                return false;
-            }
-            logger.info("Residence plugin found and Hook!");
-        }
 
-        if (readonlyConfig.GriefPreventionStrictCheck){
-            Plugin GriefPreventionPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
-            GriefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
-            if (GriefPreventionAPI == null){
-                logger.warning("GriefPrevention plugin not found!");
+        Plugin residencePlugin = getServer().getPluginManager().getPlugin("Residence");
+        residenceApi = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
+        if (residenceApi == null){
+            logger.warning("Residence plugin not found!");
+            if (readonlyConfig.residenceStrictCheck){
                 return false;
             }
-            logger.info("GriefPrevention plugin found and Hook!");
         }
+        logger.info("Residence plugin found and Hook!");
+
+
+        Plugin GriefPreventionPlugin = getServer().getPluginManager().getPlugin("GriefPrevention");
+        GriefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+        if (GriefPreventionAPI == null){
+            logger.warning("GriefPrevention plugin not found!");
+            if (readonlyConfig.GriefPreventionStrictCheck){
+                return false;
+            }
+        }
+        logger.info("GriefPrevention plugin found and Hook!");
 
         return true;
     }

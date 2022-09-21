@@ -2,6 +2,8 @@ package engineer.skyouo.plugins.naturerevive;
 
 import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.api.ResidenceInterface;
+import com.griefdefender.api.Core;
+import com.griefdefender.api.GriefDefender;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import engineer.skyouo.plugins.naturerevive.commands.*;
 import engineer.skyouo.plugins.naturerevive.config.DatabaseConfig;
@@ -42,6 +44,7 @@ public final class NatureRevive extends JavaPlugin {
     public static ResidenceInterface residenceAPI;
     public static CoreProtectAPI coreProtectAPI;
     public static DataStore griefPreventionAPI;
+    public static Core griefDefenderAPI;
 
     public static DatabaseConfig databaseConfig;
     public static ReadonlyConfig readonlyConfig;
@@ -117,6 +120,10 @@ public final class NatureRevive extends JavaPlugin {
 
                     if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck)
                         continue;
+
+                    if (PositionInfo.isGriefDefender(task.getLocation()) && !readonlyConfig.griefDefenderStrictCheck) {
+                        continue;
+                    }
 
                     task.regenerateChunk();
 
@@ -249,6 +256,26 @@ public final class NatureRevive extends JavaPlugin {
             logger.warning("GriefPrevention plugin is not found, will not support GriefPrevention's features!");
 
             if (readonlyConfig.griefPreventionStrictCheck) {
+                return false;
+            }
+        }
+
+        try {
+            Plugin GriefDefenderAPI = instance.getServer().getPluginManager().getPlugin("GriefDefender");
+            griefDefenderAPI = GriefDefenderAPI != null ? GriefDefender.getCore() : null;
+
+            if (griefDefenderAPI == null) {
+                logger.warning("GriefDefender plugin is not found, will not support GriefDefender's features!");
+
+                if (readonlyConfig.griefDefenderStrictCheck) {
+                    return false;
+                }
+            }
+
+        } catch (Exception e) {
+            logger.warning("GriefDefender plugin is not found, will not support GriefDefender's features!");
+
+            if (readonlyConfig.griefDefenderStrictCheck){
                 return false;
             }
         }

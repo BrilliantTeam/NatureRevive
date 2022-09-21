@@ -20,13 +20,14 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 8;
+    public final int CONFIG_VERSION = 9;
 
     public boolean debug;
 
     public boolean residenceStrictCheck;
 
     public boolean griefPreventionStrictCheck;
+    public boolean griefDefenderStrictCheck;
 
     public boolean saferOreObfuscation;
 
@@ -129,6 +130,10 @@ public class ReadonlyConfig {
                     "演示影片: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7",
                     "Whether to enable the experimental function that if the expired chunk has GriefPrevention in it, put all blocks in GriefPrevention's claims to new chunk instead of skipping chunk.",
                     "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7"));
+
+            configuration.set("griefdefender-strict-check", false);
+            configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GD領地範圍內的方塊 功能",
+                    "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
 
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComments("coreprotect-log-username", Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",
@@ -262,6 +267,8 @@ public class ReadonlyConfig {
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
         griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
+        griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
+
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
@@ -395,6 +402,10 @@ public class ReadonlyConfig {
                         "連接至 MySQL 所用的資料表名稱.",
                         "The table's name used for storing data in MySQL server."
                 ));
+            case 8:
+                configuration.set("griefdefender-strict-check", false);
+                configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GD領地範圍內的方塊 功能",
+                        "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -411,6 +422,7 @@ public class ReadonlyConfig {
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
         griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
+        griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);

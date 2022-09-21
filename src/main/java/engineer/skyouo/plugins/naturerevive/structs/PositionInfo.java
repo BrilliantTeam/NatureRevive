@@ -1,15 +1,15 @@
 package engineer.skyouo.plugins.naturerevive.structs;
 
 import com.bekvon.bukkit.residence.protection.ResidenceManager;
+import com.griefdefender.api.claim.Claim;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
-import static engineer.skyouo.plugins.naturerevive.NatureRevive.griefPreventionAPI;
-import static engineer.skyouo.plugins.naturerevive.NatureRevive.residenceAPI;
+import static engineer.skyouo.plugins.naturerevive.NatureRevive.*;
 
 @SerializableAs("PositionInfo")
 public class PositionInfo implements ConfigurationSerializable {
@@ -42,6 +42,29 @@ public class PositionInfo implements ConfigurationSerializable {
 
     public static boolean isGriefPrevention(Location location){
         return griefPreventionAPI != null && griefPreventionAPI.getClaims(location.getChunk().getX(), location.getChunk().getZ()).size() != 0;
+    }
+
+    public static boolean isGriefDefender(Location location){
+        Chunk chunk = location.getChunk();
+        List<UUID> claimUUIDList = new ArrayList<>();
+        for (int x = 0; x < 16; x++){
+            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1; y++){
+                for (int z = 0; z < 16; z++){
+                    Location claimLocation = chunk.getBlock(x, y, z).getLocation();
+                    Claim claim = griefDefenderAPI.getClaimAt(claimLocation);
+                    UUID uuid = claim.getOwnerUniqueId();
+                    UUID none = UUID.fromString("00000000-0000-0000-0000-000000000000");
+                    if (!uuid.equals(none)){
+                        UUID claimUUID = claim.getUniqueId();
+                        if (!claimUUIDList.contains(claimUUID)){
+                            claimUUIDList.add(claimUUID);
+                        }
+                    }
+                }
+            }
+        }
+
+        return griefDefenderAPI != null && claimUUIDList.size() != 0;
     }
 
     public boolean isOverTTL() {

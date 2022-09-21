@@ -271,7 +271,7 @@ public final class NatureRevive extends JavaPlugin {
                     return false;
                 }
             }
-
+            logger.info("GriefDefender plugin is found and hooked!");
         } catch (Exception e) {
             logger.warning("GriefDefender plugin is not found, will not support GriefDefender's features!");
 

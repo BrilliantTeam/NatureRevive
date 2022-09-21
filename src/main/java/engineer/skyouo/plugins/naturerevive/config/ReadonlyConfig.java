@@ -132,7 +132,7 @@ public class ReadonlyConfig {
                     "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=7"));
 
             configuration.set("griefdefender-strict-check", false);
-            configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GD領地範圍內的方塊 功能",
+            configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GD領地的區塊，但是不再生GD領地範圍內的方塊 功能",
                     "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
 
             configuration.set("coreprotect-log-username", "#資源再生");
@@ -404,7 +404,7 @@ public class ReadonlyConfig {
                 ));
             case 8:
                 configuration.set("griefdefender-strict-check", false);
-                configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GP領地的區塊，但是不再生GD領地範圍內的方塊 功能",
+                configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GD領地的區塊，但是不再生GD領地範圍內的方塊 功能",
                         "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
             default:
                 configuration.set("config-version", CONFIG_VERSION);

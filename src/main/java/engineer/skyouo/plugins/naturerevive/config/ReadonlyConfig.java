@@ -1,11 +1,16 @@
 package engineer.skyouo.plugins.naturerevive.config;
 
+import engineer.skyouo.plugins.naturerevive.NatureRevive;
+import engineer.skyouo.plugins.naturerevive.config.adapters.MySQLDatabaseAdapter;
+import engineer.skyouo.plugins.naturerevive.config.adapters.SQLiteDatabaseAdapter;
+import engineer.skyouo.plugins.naturerevive.config.adapters.YamlDatabaseAdapter;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -15,14 +20,17 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 3;
+    public final int CONFIG_VERSION = 8;
 
     public boolean debug;
 
     public boolean residenceStrictCheck;
+
     public boolean griefPreventionStrictCheck;
 
     public boolean saferOreObfuscation;
+
+    public double minTPSCountForRegeneration;
 
     public long ttlDuration;
 
@@ -38,11 +46,37 @@ public class ReadonlyConfig {
 
     public int dataSaveTime;
 
+    public int maxPlayersCountForRegeneration;
+
     public String coreProtectUserName;
 
     public String reloadSuccessMessage;
 
     public String reloadFailureMessage;
+
+    public String stopChunkRegenerationMessage;
+
+    public String startChunkRegenerationMessage;
+
+    public String forceRegenFailedDueRegenStopMessage;
+
+    public List<String> ignoredWorld;
+
+    // MySQL info
+
+    public String databaseName;
+
+    public String databaseTableName;
+
+    public String databaseUsername;
+
+    public String databaseIp;
+
+    public int databasePort;
+
+    public String databasePassword;
+
+    public String jdbcConnectionString;
 
     public ReadonlyConfig() {
         new File("plugins/NatureRevive").mkdirs();
@@ -110,6 +144,18 @@ public class ReadonlyConfig {
             configuration.setComments("messages.reload-failure-message", Arrays.asList("當插件配置檔重載失敗時，向指令執行者傳送的訊息.",
                     "The message to be sent on plugin's configuration is failed to reload."));
 
+            configuration.set("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
+            configuration.setComments("messages.stop-regeneration", Arrays.asList("當區塊重生系統被關閉時，向指令執行者傳送的訊息.",
+                    "The message to be sent on plugin's chunk regeneration system was turned off."));
+
+            configuration.set("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+            configuration.setComments("messages.start-regeneration", Arrays.asList("當區塊重生系統被重新開啟時，向指令執行者傳送的訊息.",
+                    "The message to be sent on plugin's chunk regeneration system was turned on again."));
+
+            configuration.set("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
+            configuration.setComments("messages.force-regen-fail-due-to-regeneration-stop", Arrays.asList("當區塊重生系統被關閉時, 執行強制重生系統會回傳的訊息.",
+                    "The message to be sent on forcing regenerate command was invoked but the regeneration system was paused."));
+
             configuration.set("config-version", CONFIG_VERSION);
             configuration.setComments("config-version", Arrays.asList("配置檔案版本，請不要更改此數值！", "Config version, DO NOT CHANGE IT MANUALLY AS IT MIGHT OVERWRITE ENTIRE CONFIGURATION."));
 
@@ -135,6 +181,75 @@ public class ReadonlyConfig {
                     )
             );
 
+            configuration.set("min-tps-for-regenerate-chunk", 16.0);
+            configuration.setComments("min-tps-for-regenerate-chunk", Arrays.asList(
+                    "重生區塊的最低 TPS 數值, 倘若低於該數值, 區塊重生將會被擱置.",
+                    "The minimum TPS for regenerating expired chunks, if server's tps is lower than this value, the regeneration task will be stopped."
+            ));
+
+            configuration.set("max-players-for-regenerate-chunk", 40);
+            configuration.setComments("max-players-for-regenerate-chunk", Arrays.asList(
+                    "重生區塊的最高玩家上限, 倘若玩家數高於該數值, 區塊重生將會被擱置.",
+                    "The maximum players count for regenerating expired chunks, if server's players count is greater than this value, the regeneration task will be stopped."
+            ));
+
+            configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
+            configuration.setComments("blacklist-worlds", Arrays.asList(
+                    "該列表內的世界將會被重生系統忽略, 並將不會再生.",
+                    "The list of ignored world that will be skipped by regeneration system."
+            ));
+
+            configuration.set("storage.method", "yaml");
+            configuration.setComments("storage.method", Arrays.asList(
+                    "選擇儲存待更新區塊的資料庫類型, 可選擇 yaml (本地), sqlite (本地), mysql (遠端, 需配置 MySQL 伺服器)",
+                    "Choosing the database type of storing chunks not reaching ttl, the available option is 'yaml' and 'sqlite."
+            ));
+
+            configuration.set("storage.database-name", "naturerevive");
+            configuration.setComments("storage.database-name", Arrays.asList(
+                    "應在 MySQL 使用的資料庫名稱.",
+                    "The database name used for creating tables and storing data in MySQL."
+            ));
+
+            configuration.set("storage.table-name", "locations");
+            configuration.setComments("storage.table-name", Arrays.asList(
+                    "連接至 MySQL 所用的資料表名稱.",
+                    "The table's name used for storing data in MySQL server."
+            ));
+
+            configuration.set("storage.database-domain-or-ip", "127.0.0.1");
+            configuration.setComments("storage.database-domain-or-ip", Arrays.asList(
+                    "連接至 MySQL 所用的 IP 或域名.",
+                    "The IP or domain used for connecting to MySQL server."
+            ));
+
+            configuration.set("storage.database-port", 3306);
+            configuration.setComments("storage.database-port", Arrays.asList(
+                    "連接至 MySQL 所用的端口名稱.",
+                    "The port used for connecting to MySQL server."
+            ));
+
+            configuration.set("storage.database-username", "root");
+            configuration.setComments("storage.database-name", Arrays.asList(
+                    "應在 MySQL 使用的資料庫名稱.",
+                    "The username used for connecting to MySQL server."
+            ));
+
+            configuration.set("storage.database-password", "20480727");
+            configuration.setComments("storage.database-password", Arrays.asList(
+                    "應在 MySQL 使用的資料庫密碼.",
+                    "The password used for connecting to MySQL server."
+            ));
+
+            configuration.set("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
+            configuration.setComments("storage.jdbc-connection-string", Arrays.asList(
+                    "連接至 MySQL 時所使用的 JDBC 參數, {database_ip} 表示資料庫 IP 的佔位符, {database_port} 表示資料庫端口的佔位符, {database_name} 表示資料庫名稱的佔位符.",
+                    "倘若 database-ip-and-domain 等欄位有被正確填寫的話, 將會自動帶入佔位符.",
+                    "The JDBC connection string used for connecting to MySQL server, {database_ip} standing for the port of MySQL server to connect,",
+                    "{database_port} standing for the port of MySQL server to connect, {database_name} standing for the database name used to create tables and storing data.",
+                    "Once the database config was filled up correctly, the placeholders will be automatically filled at runtime."
+            ));
+
             try {
                 configuration.save(file);
             } catch (IOException e) {
@@ -155,11 +270,26 @@ public class ReadonlyConfig {
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
         blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
+        maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
         reloadSuccessMessage = configuration.getString("messages.reload-success-message", "&a成功重載插件配置檔!");
         reloadFailureMessage = configuration.getString("messages.reload-failure-message", "&c插件配置檔重載失敗, 請查看後台以獲取詳細記錄.");
+        stopChunkRegenerationMessage = configuration.getString("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
+        startChunkRegenerationMessage = configuration.getString("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+        forceRegenFailedDueRegenStopMessage = configuration.getString("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
+
+        ignoredWorld = configuration.getStringList("blacklist-worlds");
+
+        databaseName = configuration.getString("storage.database-name", "naturerevive");
+        databaseTableName = configuration.getString("storage.table-name", "locations");
+        databaseIp = configuration.getString("storage.database-domain-or-ip", "127.0.0.1");
+        databasePort = configuration.getInt("storage.database-port", 3306);
+        databaseUsername = configuration.getString("storage.database-username", "root");
+        databasePassword = configuration.getString("storage.database-password", "20480727");
+        jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
     }
 
     private void updateConfigurations(int version) {
@@ -185,7 +315,86 @@ public class ReadonlyConfig {
                         )
                 );
             case 3:
+                configuration.set("storage.method", "yaml");
+                configuration.setComments("storage.method", Arrays.asList(
+                        "選擇儲存待更新區塊的資料庫類型, 可選擇 yaml (本地), sqlite (本地), mysql (遠端, 需配置 MySQL 伺服器)",
+                        "Choosing the database type of storing chunks not reaching ttl, the available option is 'yaml' and 'sqlite."
+                ));
+            case 4:
+                configuration.set("storage.database-name", "naturerevive");
+                configuration.setComments("storage.database-name", Arrays.asList(
+                        "應在 MySQL 使用的資料庫名稱.",
+                        "The database name used for creating tables and storing data in MySQL."
+                ));
 
+                configuration.set("storage.database-domain-or-ip", "127.0.0.1");
+                configuration.setComments("storage.database-domain-or-ip", Arrays.asList(
+                        "連接至 MySQL 所用的 IP 或域名.",
+                        "The IP or domain used for connecting to MySQL server."
+                ));
+
+                configuration.set("storage.database-port", 3306);
+                configuration.setComments("storage.database-port", Arrays.asList(
+                        "連接至 MySQL 所用的端口名稱.",
+                        "The port used for connecting to MySQL server."
+                ));
+
+                configuration.set("storage.database-username", "root");
+                configuration.setComments("storage.database-name", Arrays.asList(
+                        "應在 MySQL 使用的資料庫名稱.",
+                        "The username used for connecting to MySQL server."
+                ));
+
+                configuration.set("storage.database-password", "20480727");
+                configuration.setComments("storage.database-password", Arrays.asList(
+                        "應在 MySQL 使用的資料庫密碼.",
+                        "The password used for connecting to MySQL server."
+                ));
+
+                configuration.set("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
+                configuration.setComments("storage.jdbc-connection-string", Arrays.asList(
+                        "連接至 MySQL 時所使用的 JDBC 參數, {database_ip} 表示資料庫 IP 的佔位符, {database_port} 表示資料庫端口的佔位符, {database_name} 表示資料庫名稱的佔位符.",
+                        "倘若 database-ip-and-domain 等欄位有被正確填寫的話, 將會自動帶入佔位符.",
+                        "The JDBC connection string used for connecting to MySQL server, {database_ip} standing for the port of MySQL server to connect,",
+                        "{database_port} standing for the port of MySQL server to connect, {database_name} standing for the database name used to create tables and storing data.",
+                        "Once the database config was filled up correctly, the placeholders will be automatically filled at runtime."
+                ));
+            case 5:
+                configuration.set("min-tps-for-regenerate-chunk", 16.0);
+                configuration.setComments("min-tps-for-regenerate-chunk", Arrays.asList(
+                        "重生區塊的最低 TPS 數值, 倘若低於該數值, 區塊重生將會被擱置.",
+                        "The minimum TPS for regenerating expired chunks, if server's tps is lower than this value, the regeneration task will be stopped."
+                ));
+
+                configuration.set("max-players-for-regenerate-chunk", 40);
+                configuration.setComments("max-players-for-regenerate-chunk", Arrays.asList(
+                        "重生區塊的最高玩家上限, 倘若玩家數高於該數值, 區塊重生將會被擱置.",
+                        "The maximum players count for regenerating expired chunks, if server's players count is greater than this value, the regeneration task will be stopped."
+                ));
+            case 6:
+                configuration.set("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
+                configuration.setComments("messages.stop-regeneration", Arrays.asList("當區塊重生系統被關閉時，向指令執行者傳送的訊息.",
+                        "The message to be sent on plugin's chunk regeneration system was turned off."));
+
+                configuration.set("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+                configuration.setComments("messages.start-regeneration", Arrays.asList("當區塊重生系統被重新開啟時，向指令執行者傳送的訊息.",
+                        "The message to be sent on plugin's chunk regeneration system was turned on again."));
+
+                configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
+                configuration.setComments("blacklist-worlds", Arrays.asList(
+                        "該列表內的世界將會被重生系統忽略, 並將不會再生.",
+                        "The list of ignored world that will be skipped by regeneration system."
+                ));
+
+                configuration.set("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
+                configuration.setComments("messages.force-regen-fail-due-to-regeneration-stop", Arrays.asList("當區塊重生系統被關閉時, 執行強制重生系統會回傳的訊息.",
+                        "The message to be sent on forcing regenerate command was invoked but the regeneration system was paused."));
+            case 7:
+                configuration.set("storage.table-name", "locations");
+                configuration.setComments("storage.table-name", Arrays.asList(
+                        "連接至 MySQL 所用的資料表名稱.",
+                        "The table's name used for storing data in MySQL server."
+                ));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -202,7 +411,7 @@ public class ReadonlyConfig {
         debug = configuration.getBoolean("debug", false);
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
         griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
-        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", true);
+        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
@@ -210,11 +419,37 @@ public class ReadonlyConfig {
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
         blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
+        minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
+        maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
         reloadSuccessMessage = configuration.getString("messages.reload-success-message", "&a成功重載插件配置檔!");
         reloadFailureMessage = configuration.getString("messages.reload-failure-message", "&c插件配置檔重載失敗, 請查看後台以獲取詳細記錄.");
+        stopChunkRegenerationMessage = configuration.getString("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
+        startChunkRegenerationMessage = configuration.getString("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+        forceRegenFailedDueRegenStopMessage = configuration.getString("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
+
+        ignoredWorld = configuration.getStringList("blacklist-worlds");
+
+        databaseName = configuration.getString("storage.database-name", "naturerevive");
+        databaseTableName = configuration.getString("storage.table-name", "locations");
+        databaseIp = configuration.getString("storage.database-domain-or-ip", "127.0.0.1");
+        databasePort = configuration.getInt("storage.database-port", 3306);
+        databaseUsername = configuration.getString("storage.database-username", "root");
+        databasePassword = configuration.getString("storage.database-password", "20480727");
+        jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
+
+        if (NatureRevive.databaseConfig != null) {
+            try {
+                NatureRevive.databaseConfig.save();
+                NatureRevive.databaseConfig.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        NatureRevive.databaseConfig = determineDatabase();
     }
 
     private long parseDuration(String duration) {
@@ -228,5 +463,19 @@ public class ReadonlyConfig {
         target = target.replace(" ", "").toUpperCase(Locale.ROOT);
 
         return Duration.parse(target).toMillis();
+    }
+
+    public DatabaseConfig determineDatabase() {
+        String databaseType = configuration.getString("storage.method", "yaml");
+
+        switch (databaseType.toLowerCase()) {
+            case "sqlite":
+                return new SQLiteDatabaseAdapter();
+            case "mysql":
+                return new MySQLDatabaseAdapter();
+            case "yaml":
+            default:
+                return new YamlDatabaseAdapter();
+        }
     }
 }

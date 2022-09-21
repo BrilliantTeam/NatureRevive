@@ -104,6 +104,9 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     protected static void flagChunk(Location location) {
+        if (NatureRevive.readonlyConfig.ignoredWorld.contains(location.getWorld().getName()))
+            return;
+
         if (NatureRevive.residenceAPI != null && !NatureRevive.readonlyConfig.residenceStrictCheck) {
             if (NatureRevive.residenceAPI.getByLoc(location) != null) {
                 return;

@@ -6,7 +6,7 @@
 
     <groupId>engineer.skyouo.plugins</groupId>
     <artifactId>NatureRevive</artifactId>
-    <version>1.2-SNAPSHOT</version>
+    <version>1.4-PREVIEW-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>NatureRevive</name>
@@ -130,6 +130,12 @@
             <artifactId>GriefPrevention</artifactId>
             <version>16.18</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.0.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

@@ -9,6 +9,7 @@ import engineer.skyouo.plugins.naturerevive.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.listeners.ObfuscateLootListener;
 import engineer.skyouo.plugins.naturerevive.manager.Queue;
+import engineer.skyouo.plugins.naturerevive.manager.SuspendedZone;
 import engineer.skyouo.plugins.naturerevive.manager.Task;
 import engineer.skyouo.plugins.naturerevive.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
@@ -20,7 +21,9 @@ import net.coreprotect.CoreProtectAPI;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.TagParser;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -34,6 +37,8 @@ public final class NatureRevive extends JavaPlugin {
         ConfigurationSerialization.registerClass(PositionInfo.class, "PositionInfo");
     }
 
+    public static boolean enableRevive = true;
+
     public static ResidenceInterface residenceAPI;
     public static CoreProtectAPI coreProtectAPI;
     public static DataStore griefPreventionAPI;
@@ -45,7 +50,9 @@ public final class NatureRevive extends JavaPlugin {
 
     public static JavaPlugin instance;
 
-    public static final Queue<Task> queue = new Queue<>();
+    public static SuspendedZone suspendedZone;
+
+    public static Queue<Task> queue = new Queue<>();
     public static final Queue<BlockStateWithPos> blockStateWithPosQueue = new Queue<>();
     public static final Queue<BlockDataChangeWithPos> blockDataChangeWithPos = new Queue<>();
     // reserved for synchronous CoreProtect logging
@@ -53,13 +60,22 @@ public final class NatureRevive extends JavaPlugin {
     @Override
     public void onEnable() {
         // Plugin startup logic
-
         instance = this;
 
-        databaseConfig = new DatabaseConfig();
         readonlyConfig = new ReadonlyConfig();
+        databaseConfig = readonlyConfig.determineDatabase();
+
+        suspendedZone = new SuspendedZone();
 
         logger = getLogger();
+
+        if (readonlyConfig.debug) {
+            logger.info("[DEBUG] =============");
+            for (World world : getServer().getWorlds()) {
+                logger.info(world.getName() + " - " + world.getEnvironment().name());
+            }
+            logger.info("[DEBUG] =============");
+        }
 
         if (!checkSoftDependPlugins()){
             logger.warning("Disabling plugin due to lack of dependencies and enable the feature requires extra dependencies!");
@@ -72,6 +88,8 @@ public final class NatureRevive extends JavaPlugin {
         getCommand("forceregenall").setExecutor(new ForceRegenAllCommand(this));
         getCommand("testrandomizeore").setExecutor(new TestRandomizeOreCommand());
         getCommand("reloadreviveconfig").setExecutor(new ReloadCommand());
+        getCommand("togglerevive").setExecutor(new ToggleChunkRegenerationCommand());
+        getCommand("navdebug").setExecutor(new DebugCommand());
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
@@ -87,13 +105,19 @@ public final class NatureRevive extends JavaPlugin {
         }, 20L, readonlyConfig.checkChunkTTLTick);
 
         getServer().getScheduler().runTaskTimer(this, () -> {
-            if (queue.size() > 0) {
+            if (queue.size() > 0 && isSuitableForChunkRegeneration()) {
                 for (int i = 0; i < readonlyConfig.taskPerProcess && queue.hasNext(); i++) {
                     Task task = queue.pop();
 
-                    if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck) return;
+                    if (NatureRevive.readonlyConfig.ignoredWorld.contains(task.getLocation().getWorld().getName()))
+                        continue;
 
-                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck) return;
+                    if (PositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck)
+                        continue;
+
+                    if (PositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck)
+                        continue;
+
                     task.regenerateChunk();
 
                     if (readonlyConfig.debug)
@@ -164,45 +188,75 @@ public final class NatureRevive extends JavaPlugin {
         // shutdown logic
 
         try {
+            while (queue.hasNext()) {
+                databaseConfig.set(queue.pop().toPositionInfo());
+            }
+
             databaseConfig.save();
+            databaseConfig.close();
+
+            suspendedZone.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        getServer().getScheduler().cancelTasks(this);
     }
 
     public static boolean checkSoftDependPlugins(){
-        Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
-        coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
-        if (coreProtectAPI != null){
-            logger.info("CoreProtect plugin is found and hooked!");
+        try {
+            Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
+            coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
+            if (coreProtectAPI != null) {
+                logger.info("CoreProtect plugin is found and hooked!");
+            }
+        } catch (Exception e) {
+            logger.info("CoreProtect plugin is not found, will not support CoreProtect's features!");
         }
 
+        try {
+            Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
+            residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
+            if (residenceAPI == null) {
+                logger.warning("Residence plugin is not found, will not support Residence's features!");
+                if (readonlyConfig.residenceStrictCheck) {
 
-        Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
-        residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
-        if (residenceAPI == null) {
-            logger.warning("Residence plugin is not found, will not support GriefPrevention's features!");
+                    return false;
+                }
+            }
+            logger.info("Residence plugin is found and hooked!");
+        } catch (Exception e) {
+            logger.warning("Residence plugin is not found, will not support Residence's features!");
             if (readonlyConfig.residenceStrictCheck) {
 
                 return false;
             }
         }
-        logger.info("Residence plugin is found and hooked!");
 
+        try {
+            Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
+            griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
 
-        Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
-        griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+            if (griefPreventionAPI == null) {
+                logger.warning("GriefPrevention plugin is not found, will not support GriefPrevention's features!");
 
-        if (griefPreventionAPI == null) {
+                if (readonlyConfig.griefPreventionStrictCheck) {
+                    return false;
+                }
+            }
+            logger.info("GriefPrevention plugin is found and hooked!");
+        } catch (Exception e) {
             logger.warning("GriefPrevention plugin is not found, will not support GriefPrevention's features!");
 
             if (readonlyConfig.griefPreventionStrictCheck) {
                 return false;
             }
         }
-        logger.info("GriefPrevention plugin is found and hooked!");
 
         return true;
+    }
+
+    private boolean isSuitableForChunkRegeneration() {
+        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && ((CraftServer) getServer()).getHandle().getServer().recentTps[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive;
     }
 }

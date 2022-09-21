@@ -21,6 +21,16 @@ public class PositionInfo implements ConfigurationSerializable {
         this.ttl = System.currentTimeMillis() + ttl;
     }
 
+    public PositionInfo(ChunkPos chunkPos, long ttl) {
+        this.location = chunkPos;
+        this.ttl = ttl;
+    }
+
+    public PositionInfo(int x, int z, long ttl, String levelName) {
+        this.location = new ChunkPos(levelName, x, z);
+        this.ttl = ttl;
+    }
+
     public PositionInfo(Map<String, Object> map) {
         this.location = new ChunkPos((String) map.get("world"), (int) map.get("chunkX"), (int) map.get("chunkZ"));
         this.ttl = (long) map.get("ttl");
@@ -42,12 +52,18 @@ public class PositionInfo implements ConfigurationSerializable {
         return location.toLocation();
     }
 
+    public ChunkPos getChunkPos() { return location; }
+
     public long getTTL() {
         return ttl;
     }
 
     public void setTTL(long ttl) {
         this.ttl = ttl;
+    }
+
+    public static PositionInfo fromExistingTask(Location location, long ttl) {
+        return new PositionInfo(ChunkPos.fromLocation(location), ttl);
     }
 
     @Override
@@ -57,6 +73,7 @@ public class PositionInfo implements ConfigurationSerializable {
         result.put("chunkX", location.chunkX);
         result.put("chunkZ", location.chunkZ);
         result.put("ttl", ttl);
+
         return result;
     }
 

@@ -436,6 +436,10 @@ public class Task {
         return chunk;
     }
 
+    public PositionInfo toPositionInfo() {
+        return PositionInfo.fromExistingTask(location, ttl);
+    }
+
     private static Location getMiddleOfLocation(Location location) {
         Chunk chunk = location.getChunk();
         return new Location(location.getWorld(), (chunk.getX() << 4) + 8, location.getBlockY(), (chunk.getZ() << 4) + 8);

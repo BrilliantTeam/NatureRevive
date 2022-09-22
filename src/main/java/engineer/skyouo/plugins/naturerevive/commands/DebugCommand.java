@@ -30,10 +30,12 @@ public class DebugCommand implements CommandExecutor {
 
         sender.sendMessage(" ");
         sender.sendMessage("Database no cache tasks: ");
-        for (PositionInfo positionInfo : NatureRevive.databaseConfig.values()) {
-            PositionInfo positionInfoNoCache = ((MySQLDatabaseAdapter) NatureRevive.databaseConfig).getNoCache(positionInfo);
-            sender.sendMessage(positionInfoNoCache.getLocation().toString() + " - " + positionInfoNoCache.getTTL());
-        }
+        try {
+            for (PositionInfo positionInfo : NatureRevive.databaseConfig.values()) {
+                PositionInfo positionInfoNoCache = ((MySQLDatabaseAdapter) NatureRevive.databaseConfig).getNoCache(positionInfo);
+                sender.sendMessage(positionInfoNoCache.getLocation().toString() + " - " + positionInfoNoCache.getTTL());
+            }
+        } catch (Exception ignored) {}
 
         sender.sendMessage("Time now is: " + System.currentTimeMillis());
         sender.sendMessage("============================");

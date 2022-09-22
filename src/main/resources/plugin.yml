@@ -2,6 +2,7 @@ name: NatureRevive
 version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.NatureRevive
 api-version: 1.19
+authors: [NCT_skyouo, twseer67875, Brilliant Server.]
 softdepend: [Residence, CoreProtect, GriefPrevention, GriefDefender]
 website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
 libraries: [org.xerial:sqlite-jdbc:3.39.3.0, mysql:mysql-connector-java:8.0.30]

@@ -1,6 +1,8 @@
 package engineer.skyouo.plugins.naturerevive.listeners;
 
 import engineer.skyouo.plugins.naturerevive.NatureRevive;
+import engineer.skyouo.plugins.naturerevive.manager.Task;
+import engineer.skyouo.plugins.naturerevive.structs.ChunkPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -17,6 +19,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.BrewEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
+import org.bukkit.event.world.ChunkLoadEvent;
 
 import java.util.UUID;
 
@@ -104,6 +107,22 @@ public class ChunkRelatedEventListener implements Listener {
     public void onFurnaceBurnEvent(FurnaceBurnEvent event) {
         log(event, event.getBlock().getLocation());
         flagChunk(event.getBlock().getLocation());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onChunkLoadEvent(ChunkLoadEvent e) {
+        if (NatureRevive.readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive")) {
+            Location location = new ChunkPos(e.getWorld(), e.getChunk().getX(), e.getChunk().getZ()).toLocation();
+            PositionInfo positionInfo = NatureRevive.databaseConfig.get(location);
+
+            if (positionInfo == null)
+                return;
+
+            if (positionInfo.isOverTTL()) {
+                NatureRevive.queue.add(new Task(positionInfo));
+                NatureRevive.databaseConfig.unset(positionInfo);
+            }
+        }
     }
 
     protected static void flagChunk(Location location) {

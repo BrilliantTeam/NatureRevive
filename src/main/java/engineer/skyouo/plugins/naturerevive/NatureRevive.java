@@ -15,6 +15,7 @@ import engineer.skyouo.plugins.naturerevive.manager.SuspendedZone;
 import engineer.skyouo.plugins.naturerevive.manager.Task;
 import engineer.skyouo.plugins.naturerevive.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.structs.BlockStateWithPos;
+import engineer.skyouo.plugins.naturerevive.structs.ChunkPos;
 import engineer.skyouo.plugins.naturerevive.structs.PositionInfo;
 import me.ryanhamshire.GriefPrevention.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
@@ -22,11 +23,13 @@ import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.TagParser;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.craftbukkit.v1_19_R1.CraftServer;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -98,13 +101,35 @@ public final class NatureRevive extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
 
         getServer().getScheduler().runTaskTimer(this, () -> {
-            List<PositionInfo> positionInfos = databaseConfig.values();
-            for (PositionInfo positionInfo : positionInfos) {
-                if (positionInfo.isOverTTL()) {
-                    queue.add(new Task(positionInfo));
-                    databaseConfig.unset(positionInfo);
-                }
-            }
+                    if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
+                        List<PositionInfo> positionInfos = databaseConfig.values();
+                        for (PositionInfo positionInfo : positionInfos) {
+                            if (positionInfo.isOverTTL()) {
+                                queue.add(new Task(positionInfo));
+                                databaseConfig.unset(positionInfo);
+                            }
+                        }
+                    }
+
+                    if (readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
+                        for (Player player : getServer().getOnlinePlayers()) {
+                            for (int x = -1; x < 2; x++)
+                                for (int z = -1; z < 2; z++) {
+                                    if (x == z && x == 0)
+                                        continue;
+
+                                    PositionInfo positionInfo = databaseConfig.get(new ChunkPos(player.getWorld(), player.getLocation().getChunk().getX() + x, player.getLocation().getChunk().getZ() + z).toLocation());
+
+                                    if (positionInfo == null)
+                                        continue;
+
+                                    if (positionInfo.isOverTTL()) {
+                                        queue.add(new Task(positionInfo));
+                                        databaseConfig.unset(positionInfo);
+                                    }
+                                }
+                        }
+                    }
         }, 20L, readonlyConfig.checkChunkTTLTick);
 
         getServer().getScheduler().runTaskTimer(this, () -> {

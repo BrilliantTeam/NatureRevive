@@ -61,6 +61,8 @@ public class ReadonlyConfig {
 
     public String forceRegenFailedDueRegenStopMessage;
 
+    public String regenerationStrategy;
+
     public List<String> ignoredWorld;
 
     // MySQL info
@@ -206,6 +208,19 @@ public class ReadonlyConfig {
                     "The list of ignored world that will be skipped by regeneration system."
             ));
 
+            configuration.set("regeneration-strategy", "aggressive");
+            configuration.setComments("regeneration-strategy", Arrays.asList(
+                    "控制區塊的生成策略以及激進程度, 可選 aggressive (激進), passive (緩和), average (均衡)",
+                    "當選擇 aggressive 時, 插件將會主動載入重生過期的區塊, 該方法可以有效清空所有過期, 但較為消耗資源.",
+                    "當選擇 average 時, 插件會定期檢查玩家周圍八格的區塊是否過期, 該方法對人數均衡的伺服器較為友善.",
+                    "當選擇 passive 時, 插件將不會主動加載過期的區塊, 並將等到玩家主動加載區塊時才會進行重生,",
+                    "該方法可以避免區塊重生所造成的 TPS 跌幅, 但會有部分未被玩家探索的區塊長時間未重生.",
+                    "The option to determine the plugin's regeneration management strategy, valid options are 'aggressive', 'passive' and 'average'",
+                    "When aggressive is chosen, the plugin will load and regenerate expired chunks periodically, this method can regenerate all chunks that is expired, but the performance cost will much higher.",
+                    "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
+                    "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
+            ));
+
             configuration.set("storage.method", "yaml");
             configuration.setComments("storage.method", Arrays.asList(
                     "選擇儲存待更新區塊的資料庫類型, 可選擇 yaml (本地), sqlite (本地), mysql (遠端, 需配置 MySQL 伺服器)",
@@ -266,39 +281,7 @@ public class ReadonlyConfig {
             updateConfigurations(configuration.getInt("config-version"));
         }
 
-        debug = configuration.getBoolean("debug", false);
-        residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
-        griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
-        griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
-
-        saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
-
-        taskPerProcess = configuration.getInt("task-process-per-tick", 1);
-        queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
-        checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
-        dataSaveTime = configuration.getInt("data-save-time-tick", 300);
-        blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
-        blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
-        minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
-        maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
-
-        ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
-        coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
-        reloadSuccessMessage = configuration.getString("messages.reload-success-message", "&a成功重載插件配置檔!");
-        reloadFailureMessage = configuration.getString("messages.reload-failure-message", "&c插件配置檔重載失敗, 請查看後台以獲取詳細記錄.");
-        stopChunkRegenerationMessage = configuration.getString("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
-        startChunkRegenerationMessage = configuration.getString("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
-        forceRegenFailedDueRegenStopMessage = configuration.getString("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
-
-        ignoredWorld = configuration.getStringList("blacklist-worlds");
-
-        databaseName = configuration.getString("storage.database-name", "naturerevive");
-        databaseTableName = configuration.getString("storage.table-name", "locations");
-        databaseIp = configuration.getString("storage.database-domain-or-ip", "127.0.0.1");
-        databasePort = configuration.getInt("storage.database-port", 3306);
-        databaseUsername = configuration.getString("storage.database-username", "root");
-        databasePassword = configuration.getString("storage.database-password", "20480727");
-        jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
+        reloadConfig();
     }
 
     private void updateConfigurations(int version) {
@@ -410,6 +393,19 @@ public class ReadonlyConfig {
                         "演示影片: https://www.youtube.com/watch?v=euKrueUrD_4&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9",
                         "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk.",
                         "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9"));
+
+                configuration.set("regeneration-strategy", "aggressive");
+                configuration.setComments("regeneration-strategy", Arrays.asList(
+                        "控制區塊的生成策略以及激進程度, 可選 aggressive (激進), passive (緩和), average (均衡)",
+                        "當選擇 aggressive 時, 插件將會主動載入重生過期的區塊, 該方法可以有效清空所有過期, 但較為消耗資源.",
+                        "當選擇 average 時, 插件會定期檢查玩家周圍八格的區塊是否過期, 該方法對人數均衡的伺服器較為友善.",
+                        "當選擇 passive 時, 插件將不會主動加載過期的區塊, 並將等到玩家主動加載區塊時才會進行重生,",
+                        "該方法可以避免區塊重生所造成的 TPS 跌幅, 但會有部分未被玩家探索的區塊長時間未重生.",
+                        "The option to determine the plugin's regeneration management strategy, valid options are 'aggressive', 'passive' and 'average'",
+                        "When aggressive is chosen, the plugin will load and regenerate expired chunks periodically, this method can regenerate all chunks that is expired, but the performance cost will much higher.",
+                        "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
+                        "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
+                ));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -427,6 +423,7 @@ public class ReadonlyConfig {
         residenceStrictCheck = configuration.getBoolean("residence-strict-check", false);
         griefPreventionStrictCheck = configuration.getBoolean("griefprevention-strict-check", false);
         griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
+
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
@@ -437,6 +434,7 @@ public class ReadonlyConfig {
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
         minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
         maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
+        regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");

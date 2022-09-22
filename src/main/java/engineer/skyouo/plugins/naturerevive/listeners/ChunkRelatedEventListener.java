@@ -18,6 +18,8 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.BrewEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 
+import java.util.UUID;
+
 public class ChunkRelatedEventListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreakEvent(BlockBreakEvent event) {
@@ -119,6 +121,14 @@ public class ChunkRelatedEventListener implements Listener {
             }
         }
 
+        if (NatureRevive.griefDefenderAPI != null && !NatureRevive.readonlyConfig.griefDefenderStrictCheck){
+            UUID uuid = NatureRevive.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
+            UUID noneUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+            if (!uuid.equals(noneUUID)){
+                return;
+            }
+        }
+
         PositionInfo positionInfo = new PositionInfo(location, NatureRevive.readonlyConfig.ttlDuration);
 
         NatureRevive.databaseConfig.set(positionInfo);
@@ -133,6 +143,14 @@ public class ChunkRelatedEventListener implements Listener {
 
         if (NatureRevive.griefPreventionAPI != null && !NatureRevive.readonlyConfig.griefPreventionStrictCheck){
             if (NatureRevive.griefPreventionAPI.getClaimAt(location, true, null) != null){
+                return;
+            }
+        }
+
+        if (NatureRevive.griefDefenderAPI != null && !NatureRevive.readonlyConfig.griefDefenderStrictCheck){
+            UUID uuid = NatureRevive.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
+            UUID noneUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+            if (!uuid.equals(noneUUID)){
                 return;
             }
         }

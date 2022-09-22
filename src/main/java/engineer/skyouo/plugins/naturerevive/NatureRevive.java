@@ -300,7 +300,7 @@ public final class NatureRevive extends JavaPlugin {
         } catch (Exception e) {
             logger.warning("GriefDefender plugin is not found, will not support GriefDefender's features!");
 
-            if (readonlyConfig.griefDefenderStrictCheck){
+            if (readonlyConfig.griefDefenderStrictCheck) {
                 return false;
             }
         }

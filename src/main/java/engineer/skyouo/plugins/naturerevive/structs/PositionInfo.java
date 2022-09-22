@@ -47,6 +47,9 @@ public class PositionInfo implements ConfigurationSerializable {
     }
 
     public static boolean isGriefDefender(Location location){
+        if (griefDefenderAPI == null)
+            return false;
+
         Chunk chunk = location.getChunk();
         List<UUID> claimUUIDList = new ArrayList<>();
         for (int x = 0; x < 16; x++) {

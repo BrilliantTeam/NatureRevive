@@ -16,6 +16,8 @@ public class PositionInfo implements ConfigurationSerializable {
     private ChunkPos location;
     private long ttl;
 
+    private static UUID emptyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     public PositionInfo(Location location, long ttl) {
         this.location = ChunkPos.fromLocation(location);
         this.ttl = System.currentTimeMillis() + ttl;
@@ -47,14 +49,13 @@ public class PositionInfo implements ConfigurationSerializable {
     public static boolean isGriefDefender(Location location){
         Chunk chunk = location.getChunk();
         List<UUID> claimUUIDList = new ArrayList<>();
-        for (int x = 0; x < 16; x++){
-            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1; y++){
-                for (int z = 0; z < 16; z++){
+        for (int x = 0; x < 16; x++) {
+            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1; y++) {
+                for (int z = 0; z < 16; z++) {
                     Location claimLocation = chunk.getBlock(x, y, z).getLocation();
                     Claim claim = griefDefenderAPI.getClaimAt(claimLocation);
                     UUID uuid = claim.getOwnerUniqueId();
-                    UUID none = UUID.fromString("00000000-0000-0000-0000-000000000000");
-                    if (!uuid.equals(none)){
+                    if (!uuid.equals(emptyUUID)) {
                         UUID claimUUID = claim.getUniqueId();
                         if (!claimUUIDList.contains(claimUUID)){
                             claimUUIDList.add(claimUUID);

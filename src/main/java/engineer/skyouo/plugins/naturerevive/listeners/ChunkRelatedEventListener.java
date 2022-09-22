@@ -21,6 +21,7 @@ import org.bukkit.event.inventory.FurnaceBurnEvent;
 import java.util.UUID;
 
 public class ChunkRelatedEventListener implements Listener {
+    private static UUID emptyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreakEvent(BlockBreakEvent event) {
         if (event.isCancelled())
@@ -123,8 +124,7 @@ public class ChunkRelatedEventListener implements Listener {
 
         if (NatureRevive.griefDefenderAPI != null && !NatureRevive.readonlyConfig.griefDefenderStrictCheck){
             UUID uuid = NatureRevive.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            UUID noneUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-            if (!uuid.equals(noneUUID)){
+            if (!uuid.equals(emptyUUID)){
                 return;
             }
         }
@@ -149,8 +149,7 @@ public class ChunkRelatedEventListener implements Listener {
 
         if (NatureRevive.griefDefenderAPI != null && !NatureRevive.readonlyConfig.griefDefenderStrictCheck){
             UUID uuid = NatureRevive.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            UUID noneUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
-            if (!uuid.equals(noneUUID)){
+            if (!uuid.equals(emptyUUID)){
                 return;
             }
         }

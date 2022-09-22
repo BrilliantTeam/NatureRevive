@@ -36,6 +36,8 @@ public class Task {
     private Location location;
     private long ttl;
 
+    private static UUID emptyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     public Task(Plugin plugin, Location location, long ttl) {
         this.location = location;
         this.ttl = ttl;
@@ -100,8 +102,7 @@ public class Task {
         if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck){
             for (BlockState blockState : chunk.getTileEntities()){
                 UUID uuid = griefDefenderAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())).getOwnerUniqueId();
-                UUID none = UUID.fromString("00000000-0000-0000-0000-000000000000");
-                if (!uuid.equals(none)){
+                if (!uuid.equals(emptyUUID)) {
                     BlockEntity tileEntity = ((CraftWorld) chunk.getWorld()).getHandle().getBlockEntity(new BlockPos(blockState.getX(), blockState.getY(), blockState.getZ()));
                     String nbt = tileEntity.saveWithFullMetadata().getAsString();
 
@@ -248,21 +249,19 @@ public class Task {
         }
     }
 
-    private void griefDefenderOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities){
+    private void griefDefenderOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
         Map<Location, BlockData> perversedBlocks = new HashMap<>();
 
-        List<UUID> claimUUIDList = new ArrayList<>();
-        UUID none = UUID.fromString("00000000-0000-0000-0000-000000000000");
-        for (int x = 0; x < 16; x++){
-            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1; y++){
-                for (int z = 0; z < 16; z++){
+        List<UUID> claimUUIDList = new ArrayList<>();for (int x = 0; x < 16; x++) {
+            for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1; y++) {
+                for (int z = 0; z < 16; z++) {
                     Location claimLocation = chunk.getBlock(x, y, z).getLocation();
                     UUID uuid = griefDefenderAPI.getClaimAt(claimLocation).getOwnerUniqueId();
 
-                    if (!uuid.equals(none)){
+                    if (!uuid.equals(emptyUUID)) {
                         com.griefdefender.api.claim.Claim claim = griefDefenderAPI.getClaimAt(claimLocation);
                         UUID claimUUID = claim.getUniqueId();
-                        if (!claimUUIDList.contains(claimUUID)){
+                        if (!claimUUIDList.contains(claimUUID)) {
                             claimUUIDList.add(claimUUID);
                         }
                     }
@@ -270,13 +269,13 @@ public class Task {
             }
         }
 
-        if (claimUUIDList.size() > 0){
-            for (int x = 0; x < 16; x++){
-                for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1 ; y++){
-                    for (int z = 0; z < 16; z++){
+        if (claimUUIDList.size() > 0) {
+            for (int x = 0; x < 16; x++) {
+                for (int y = chunk.getWorld().getMinHeight(); y < chunk.getWorld().getMaxHeight() - 1 ; y++) {
+                    for (int z = 0; z < 16; z++) {
                         Location targetLocation = new Location(location.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
                         UUID uuid = griefDefenderAPI.getClaimAt(targetLocation).getOwnerUniqueId();
-                        if (!uuid.equals(none)){
+                        if (!uuid.equals(emptyUUID)) {
                             try {
                                 BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
                                 perversedBlocks.put(targetLocation, block);

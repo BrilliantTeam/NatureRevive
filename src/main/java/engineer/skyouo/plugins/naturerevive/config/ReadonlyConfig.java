@@ -133,7 +133,9 @@ public class ReadonlyConfig {
 
             configuration.set("griefdefender-strict-check", false);
             configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GD領地的區塊，但是不再生GD領地範圍內的方塊 功能",
-                    "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
+                    "演示影片: https://www.youtube.com/watch?v=euKrueUrD_4&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9",
+                    "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk.",
+                    "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9"));
 
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComments("coreprotect-log-username", Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",
@@ -405,7 +407,9 @@ public class ReadonlyConfig {
             case 8:
                 configuration.set("griefdefender-strict-check", false);
                 configuration.setComments("griefdefender-strict-check", Arrays.asList("是否啟用 再生含有GD領地的區塊，但是不再生GD領地範圍內的方塊 功能",
-                        "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk."));
+                        "演示影片: https://www.youtube.com/watch?v=euKrueUrD_4&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9",
+                        "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk.",
+                        "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9"));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {

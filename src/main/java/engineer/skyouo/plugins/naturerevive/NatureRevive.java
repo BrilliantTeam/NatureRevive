@@ -23,6 +23,7 @@ import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.TagParser;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -309,6 +310,6 @@ public final class NatureRevive extends JavaPlugin {
     }
 
     private boolean isSuitableForChunkRegeneration() {
-        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && ((CraftServer) getServer()).getHandle().getServer().recentTps[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive;
+        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && MinecraftServer.getServer().recentTps[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive;
     }
 }

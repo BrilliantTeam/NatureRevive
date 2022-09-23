@@ -15,9 +15,9 @@ Spigot: 暫無<br>
 
 ## 🔴 dependencies | 依賴前置
 
-**CorePortect (optional) , Residence (optional) , GriefPrevention(optional)**
+**CorePortect (optional) , Residence (optional) , GriefPrevention (optional) , GriefDefender (optional)**
 
-**CorePortect (可選)、Residence (可選)、GriefPrevention (可選)**
+**CorePortect (可選)、Residence (可選)、GriefPrevention (可選)、GriefDefender (可選)**
 
 ## 🖌Commands | 指令
 ```
@@ -26,6 +26,8 @@ Spigot: 暫無<br>
 /snapshot - 保存當前區塊的快照檔案
 
 /revert <檔案名稱> - 讀取快照檔案 (位置:plugins/NatureRevive/snapshots)
+
+/togglerevive or /tgrv - 暫停資源再生流程，再輸入一次指令開啟
 
 /reloadreviveconfig or /rrc - 重新載入插件
 ```
@@ -37,6 +39,8 @@ naturerevive.snapshot - 使用/snapshot的權限
 naturerevive.revert - 使用/revert <檔案名稱>的權限
 
 naturerevive.forceregenall - 使用/forceregenall的權限
+
+naturerevive.reloadreviveconfig - 使用/reloadreviveconfig or /rrc的權限
 
 naturerevive.reloadreviveconfig - 使用/reloadreviveconfig or /rrc的權限
 

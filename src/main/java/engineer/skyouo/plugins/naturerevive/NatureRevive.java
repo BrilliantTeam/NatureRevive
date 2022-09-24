@@ -62,7 +62,7 @@ public final class NatureRevive extends JavaPlugin {
     public static Queue<Task> queue = new Queue<>();
     public static final Queue<BlockStateWithPos> blockStateWithPosQueue = new Queue<>();
     public static final Queue<BlockDataChangeWithPos> blockDataChangeWithPos = new Queue<>();
-    // reserved for synchronous CoreProtect logging
+    public static final Queue<Location> blockExplosionQueue = new Queue<>();
 
     @Override
     public void onEnable() {
@@ -206,6 +206,12 @@ public final class NatureRevive extends JavaPlugin {
                 }
             };
         }, 20L, 2L);
+
+        getServer().getScheduler().runTaskTimer(this, () -> {
+            for (int i = 0; i < NatureRevive.readonlyConfig.blockExplosionProcessingAmountPerProcessing && blockExplosionQueue.hasNext(); i++) {
+                ChunkRelatedEventListener.flagChunk(blockExplosionQueue.pop());
+            }
+        }, 20L, NatureRevive.readonlyConfig.blockExplosionProcessingTick);
 
         getServer().getScheduler().runTaskTimer(this, () -> {
             try {

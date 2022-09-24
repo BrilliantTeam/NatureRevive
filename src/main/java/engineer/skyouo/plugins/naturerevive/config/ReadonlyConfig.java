@@ -20,7 +20,7 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 9;
+    public final int CONFIG_VERSION = 10;
 
     public boolean debug;
 
@@ -48,6 +48,10 @@ public class ReadonlyConfig {
     public int dataSaveTime;
 
     public int maxPlayersCountForRegeneration;
+
+    public int blockExplosionProcessingTick;
+
+    public int blockExplosionProcessingAmountPerProcessing;
 
     public String coreProtectUserName;
 
@@ -220,6 +224,17 @@ public class ReadonlyConfig {
                     "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
                     "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
             ));
+
+            configuration.set("block-explosion-queue-process-per-n-tick", 10);
+            configuration.setComments("queue-process-per-n-tick",
+                    Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
+                            "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
+            );
+
+            configuration.set("block-explosion-queue-process-per-time", 200);
+            configuration.setComments("task-process-per-tick", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
+                    "How many block(s) to calculate per explosion process period.")
+            );
 
             configuration.set("storage.method", "yaml");
             configuration.setComments("storage.method", Arrays.asList(
@@ -406,6 +421,17 @@ public class ReadonlyConfig {
                         "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
                         "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
                 ));
+            case 9:
+                configuration.set("block-explosion-queue-process-per-n-tick", 10);
+                configuration.setComments("queue-process-per-n-tick",
+                        Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
+                                "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
+                );
+
+                configuration.set("block-explosion-queue-process-per-time", 200);
+                configuration.setComments("task-process-per-tick", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
+                        "How many block(s) to calculate per explosion process period.")
+                );
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -435,6 +461,8 @@ public class ReadonlyConfig {
         minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
         maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
         regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
+        blockExplosionProcessingTick = configuration.getInt("block-explosion-queue-process-per-n-tick", 10);
+        blockExplosionProcessingAmountPerProcessing = configuration.getInt("block-explosion-queue-process-per-time", 200);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");

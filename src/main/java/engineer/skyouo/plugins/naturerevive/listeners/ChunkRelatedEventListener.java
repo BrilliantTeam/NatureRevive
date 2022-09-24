@@ -79,9 +79,14 @@ public class ChunkRelatedEventListener implements Listener {
         if (event.isCancelled())
             return;
 
+
         for (Block block : event.blockList()) {
+            /*
             flagChunk(block.getLocation());
             log(event, block.getLocation());
+             */
+
+            NatureRevive.blockExplosionQueue.add(block.getLocation());
         }
     }
 
@@ -91,8 +96,12 @@ public class ChunkRelatedEventListener implements Listener {
             return;
 
         for (Block block : event.blockList()) {
+            /*
             log(event, block.getLocation());
             flagChunk(block.getLocation());
+             */
+
+            NatureRevive.blockExplosionQueue.add(block.getLocation());
         }
     }
 
@@ -125,7 +134,7 @@ public class ChunkRelatedEventListener implements Listener {
         }
     }
 
-    protected static void flagChunk(Location location) {
+    public static void flagChunk(Location location) {
         if (NatureRevive.readonlyConfig.ignoredWorld.contains(location.getWorld().getName()))
             return;
 

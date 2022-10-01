@@ -226,13 +226,13 @@ public class ReadonlyConfig {
             ));
 
             configuration.set("block-explosion-queue-process-per-n-tick", 10);
-            configuration.setComments("queue-process-per-n-tick",
+            configuration.setComments("block-explosion-queue-process-per-n-tick",
                     Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
                             "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
             );
 
             configuration.set("block-explosion-queue-process-per-time", 200);
-            configuration.setComments("task-process-per-tick", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
+            configuration.setComments("block-explosion-queue-process-per-time", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
                     "How many block(s) to calculate per explosion process period.")
             );
 
@@ -423,13 +423,13 @@ public class ReadonlyConfig {
                 ));
             case 9:
                 configuration.set("block-explosion-queue-process-per-n-tick", 10);
-                configuration.setComments("queue-process-per-n-tick",
+                configuration.setComments("block-explosion-queue-process-per-n-tick",
                         Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
                                 "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
                 );
 
                 configuration.set("block-explosion-queue-process-per-time", 200);
-                configuration.setComments("task-process-per-tick", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
+                configuration.setComments("block-explosion-queue-process-per-time", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
                         "How many block(s) to calculate per explosion process period.")
                 );
             default:

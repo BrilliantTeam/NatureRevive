@@ -84,6 +84,8 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
         if (cache.containsKey(location))
             return cache.get(location);
 
+        /*
+
         try {
             ResultSet resultSet = connection.createStatement()
                     .executeQuery("SELECT * FROM locations WHERE X = " + chunkPos.chunkX + " AND Z = " + chunkPos.chunkZ +  " AND WORLDNAME = '" + location.getWorld().getName() + "';");
@@ -100,6 +102,10 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
             e.printStackTrace();
             return null;
         }
+
+         */ // NCT skyouo - do not perform further lookup
+
+        return null;
     }
 
     public PositionInfo get(PositionInfo positionInfo) {
@@ -107,6 +113,8 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
 
         if (cache.containsKey(positionInfo.getLocation()))
             return cache.get(positionInfo.getLocation());
+
+        /*
 
         try {
             ResultSet resultSet = connection.createStatement()
@@ -126,6 +134,10 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
             e.printStackTrace();
             return null;
         }
+
+         */ // NCT skyouo - do not perform further lookup.
+
+        return null;
     }
 
     public List<PositionInfo> values() {

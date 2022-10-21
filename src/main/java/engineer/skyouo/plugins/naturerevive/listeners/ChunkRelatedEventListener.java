@@ -31,8 +31,7 @@ public class ChunkRelatedEventListener implements Listener {
             return;
 
 
-        log(event, event.getBlock().getLocation());
-        flagChunk(event.getBlock().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -40,8 +39,7 @@ public class ChunkRelatedEventListener implements Listener {
         if (event.isCancelled())
             return;
 
-        log(event, event.getBlock().getLocation());
-        flagChunk(event.getBlock().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getBlock().getLocation());
     }
 
     /*
@@ -57,8 +55,7 @@ public class ChunkRelatedEventListener implements Listener {
         if (event.isCancelled())
             return;
 
-        log(event, event.getBlock().getLocation());
-        flagChunk(event.getBlock().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getBlock().getLocation());
     }
 
 
@@ -70,8 +67,7 @@ public class ChunkRelatedEventListener implements Listener {
         if (event.getEntity().getKiller() == null)
             return;
 
-        log(event, event.getEntity().getLocation());
-        flagChunk(event.getEntity().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getEntity().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -108,14 +104,12 @@ public class ChunkRelatedEventListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBrewEvent(BrewEvent event) {
-        log(event, event.getBlock().getLocation());
-        flagChunk(event.getBlock().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onFurnaceBurnEvent(FurnaceBurnEvent event) {
-        log(event, event.getBlock().getLocation());
-        flagChunk(event.getBlock().getLocation());
+        NatureRevive.blockExplosionQueue.add(event.getBlock().getLocation());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

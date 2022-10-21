@@ -121,6 +121,12 @@ public class ObfuscateLootListener implements Listener {
         Lists.reverse(pairList);
 
         for (int i = 0; i < oreList.size(); i++) {
+            if ((i + 1) > pairList.size()) {
+                if (NatureRevive.readonlyConfig.debug)
+                    System.out.println("[DEBUG] Cannot fully obfuscate ores at chunk[x=" + chunk.getX()  + ", z=" + chunk.getZ() + ", world=" + chunk.getWorld().getName() + "] (ores count: " + oreList.size() + ", replaced count: " + pairList.size() + ")!");
+                break;
+            }
+
             Location loc = pairList.get(i).first();
 
             Block ore = oreList.get(i);

@@ -207,11 +207,11 @@ public final class NatureRevive extends JavaPlugin {
             };
         }, 20L, 2L);
 
-        getServer().getScheduler().runTaskTimer(this, () -> {
-            for (int i = 0; i < NatureRevive.readonlyConfig.blockExplosionProcessingAmountPerProcessing && blockExplosionQueue.hasNext(); i++) {
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            for (int i = 0; i < NatureRevive.readonlyConfig.blockProcessingAmountPerProcessing && blockExplosionQueue.hasNext(); i++) {
                 ChunkRelatedEventListener.flagChunk(blockExplosionQueue.pop());
             }
-        }, 20L, NatureRevive.readonlyConfig.blockExplosionProcessingTick);
+        }, 20L, NatureRevive.readonlyConfig.blockProcessingTick);
 
         getServer().getScheduler().runTaskTimer(this, () -> {
             try {

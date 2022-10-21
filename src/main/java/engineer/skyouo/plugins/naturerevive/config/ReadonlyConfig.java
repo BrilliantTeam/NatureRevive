@@ -20,7 +20,7 @@ public class ReadonlyConfig {
 
     private YamlConfiguration configuration;
 
-    public final int CONFIG_VERSION = 10;
+    public final int CONFIG_VERSION = 11;
 
     public boolean debug;
 
@@ -49,9 +49,9 @@ public class ReadonlyConfig {
 
     public int maxPlayersCountForRegeneration;
 
-    public int blockExplosionProcessingTick;
+    public int blockProcessingTick;
 
-    public int blockExplosionProcessingAmountPerProcessing;
+    public int blockProcessingAmountPerProcessing;
 
     public String coreProtectUserName;
 
@@ -225,15 +225,15 @@ public class ReadonlyConfig {
                     "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
             ));
 
-            configuration.set("block-explosion-queue-process-per-n-tick", 10);
-            configuration.setComments("block-explosion-queue-process-per-n-tick",
-                    Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
-                            "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
+            configuration.set("block-queue-process-per-n-tick", 10);
+            configuration.setComments("block-queue-process-per-n-tick",
+                    Arrays.asList("每 n 個 tick 處理一次事件影響之區塊計算 (1 tick = 50ms)",
+                            "Proceeding the chunks flagging function every n tick(s).")
             );
 
-            configuration.set("block-explosion-queue-process-per-time", 200);
-            configuration.setComments("block-explosion-queue-process-per-time", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
-                    "How many block(s) to calculate per explosion process period.")
+            configuration.set("block-queue-process-per-time", 200);
+            configuration.setComments("block-queue-process-per-time", Arrays.asList("每次可以處理幾個被事件影響的方塊.",
+                    "How many block(s) to calculate per chunk flagging process period.")
             );
 
             configuration.set("storage.method", "yaml");
@@ -432,6 +432,12 @@ public class ReadonlyConfig {
                 configuration.setComments("block-explosion-queue-process-per-time", Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
                         "How many block(s) to calculate per explosion process period.")
                 );
+            case 10:
+                configuration.set("block-queue-process-per-n-tick", configuration.getInt("block-explosion-queue-process-per-n-tick"));
+                configuration.set("block-queue-process-per-time", configuration.getInt("block-explosion-queue-process-per-time"));
+
+                configuration.set("block-explosion-queue-process-per-n-tick", null);
+                configuration.set("block-explosion-queue-process-per-time", null);
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -461,8 +467,8 @@ public class ReadonlyConfig {
         minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
         maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
         regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
-        blockExplosionProcessingTick = configuration.getInt("block-explosion-queue-process-per-n-tick", 10);
-        blockExplosionProcessingAmountPerProcessing = configuration.getInt("block-explosion-queue-process-per-time", 200);
+        blockProcessingTick = configuration.getInt("block-queue-process-per-n-tick", 10);
+        blockProcessingAmountPerProcessing = configuration.getInt("block-queue-process-per-time", 200);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");

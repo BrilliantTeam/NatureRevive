@@ -95,6 +95,8 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
         if (cache.containsKey(location))
             return cache.get(location);
 
+        /*
+
         try (Connection connection = hikari.getConnection(); Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement
                     .executeQuery("SELECT * FROM " + NatureRevive.readonlyConfig.databaseTableName + " WHERE X = " + chunkPos.chunkX + " AND Z = " + chunkPos.chunkZ +  " AND WORLDNAME = '" + location.getWorld().getName() + "';");
@@ -114,6 +116,10 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
             e.printStackTrace();
             return null;
         }
+
+         */ // NCT skyouo - do not perform further lookup
+
+        return null;
     }
 
     public PositionInfo getNoCache(PositionInfo positionInfo) {
@@ -148,6 +154,8 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
         if (cache.containsKey(positionInfo.getLocation()))
             return cache.get(positionInfo.getLocation());
 
+        /*
+
         try (Connection connection = hikari.getConnection(); Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement
                     .executeQuery("SELECT * FROM " + NatureRevive.readonlyConfig.databaseTableName + " WHERE X = " + chunkPos.chunkX + " AND Z = " + chunkPos.chunkZ +  " AND WORLDNAME = '" + positionInfo.getLocation().getWorld().getName() + "';");
@@ -169,6 +177,10 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
             e.printStackTrace();
             return null;
         }
+
+         */ // NCT skyouo - do not perform further lookup
+
+        return null;
     }
 
 
@@ -176,7 +188,7 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
         ArrayList<PositionInfo> positionInfos = new ArrayList<>();
 
         if (!cache.isEmpty())
-            return new ArrayList<>(cache.values());
+            return List.copyOf(cache.values());
 
         try (Connection connection = hikari.getConnection(); Statement statement = connection.createStatement()) {
             ResultSet resultSet = statement

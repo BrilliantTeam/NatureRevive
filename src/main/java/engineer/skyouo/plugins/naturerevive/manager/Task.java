@@ -298,6 +298,7 @@ public class Task {
                 for (int z = 0; z < 16; z++) {
                     Material blockType = oldChunkSnapshot.getBlockType(x, y, z);
                     Location originLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+
                     if ((blockType.equals(Material.END_PORTAL) || blockType.equals(Material.END_GATEWAY)) && !perversedBlocks.containsKey(originLocation)) {
 
                         for (int i = -2; i <= 2; i++)
@@ -367,9 +368,14 @@ public class Task {
                         if (perversedBlocks.containsKey(neighborLocation)) {
                             perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
                         }
-                    } else if (blockType.equals(Material.TORCH)) {
+                    } else if (blockType.equals(Material.WALL_TORCH)) {
                         if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END))
                             continue;
+
+                        if (isInSpecialChunks(chunk)) {
+                            perversedBlocks.put(originLocation, oldChunkSnapshot.getBlockData(x, y, z));
+                            continue;
+                        }
 
                         for (int i = -1; i <= 1; i++)
                             for (int k = -1; k <= 1; k++) {
@@ -509,7 +515,7 @@ public class Task {
 
     // The method is hardcoded to detect the end gateway.
     private static boolean isInSpecialChunks(Chunk chunk) {
-        return (chunk.getX() == 0 || chunk.getX() == -1) && (chunk.getZ() == 0 || chunk.getZ() == 1);
+        return (chunk.getX() == 0 || chunk.getX() == -1) && (chunk.getZ() == 0 || chunk.getZ() == -1);
     }
 
     private static int[] convertLocationToInChunkXYZ(Location location) {

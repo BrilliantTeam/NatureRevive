@@ -152,7 +152,7 @@ public class ChunkRelatedEventListener implements Listener {
             }
         }
 
-        BukkitPositionInfo positionInfo = new BukkitPositionInfo(location, NatureRevivePlugin.readonlyConfig.ttlDuration);
+        BukkitPositionInfo positionInfo = new BukkitPositionInfo(location, System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.ttlDuration);
 
         NatureRevivePlugin.databaseConfig.set(positionInfo);
     }

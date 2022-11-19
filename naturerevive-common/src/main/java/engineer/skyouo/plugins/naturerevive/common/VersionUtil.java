@@ -22,7 +22,11 @@ public class VersionUtil {
         int[] version = {0, 0, 0};
         String[] splited = Bukkit.getBukkitVersion().split("-")[0].split("\\.");
         for (int i = 0; i < splited.length; i++) {
-            version[i] = Integer.parseInt(splited[i]);
+            try {
+                version[i] = Integer.parseInt(splited[i]);
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                version[i] = 0;
+            }
         }
 
         return version;

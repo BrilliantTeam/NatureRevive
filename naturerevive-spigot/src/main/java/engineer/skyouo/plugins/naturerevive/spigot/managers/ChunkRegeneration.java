@@ -5,6 +5,7 @@ import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import engineer.skyouo.plugins.naturerevive.common.IPosCalculate;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
@@ -56,21 +57,20 @@ public class ChunkRegeneration {
             }
         }
 
-        if (griefPreventionAPI != null && NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck){
-            Collection<me.ryanhamshire.GriefPrevention.Claim> GriefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
-            if (GriefPrevention.size() > 0) {
-
-                for (BlockState blockState : chunk.getTileEntities()){
+        if (griefPreventionAPI != null && NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck) {
+            Collection<me.ryanhamshire.GriefPrevention.Claim> griefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+            if (griefPrevention.size() > 0) {
+                for (BlockState blockState : chunk.getTileEntities()) {
                     if (griefPreventionAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()), true, null) != null){
                        String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
 
-                        nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
+                       nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
                     }
                 }
             }
         }
 
-        if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck){
+        if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck) {
             for (BlockState blockState : chunk.getTileEntities()){
                 UUID uuid = griefDefenderAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())).getOwnerUniqueId();
                 if (!uuid.equals(emptyUUID)) {
@@ -81,7 +81,31 @@ public class ChunkRegeneration {
             }
         }
 
-        nmsWrapper.regenerateChunk(chunk.getWorld(), chunk.getX(), chunk.getZ());
+        nmsWrapper.regenerateChunk(chunk.getWorld(), chunk.getX(), chunk.getZ(), (x, y, z) -> {
+            if (residenceAPI != null && NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
+                List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
+                if (residences.size() > 0) {
+                    if (residenceAPI.getByLoc(new Location(location.getWorld(), x, y, z)) != null)
+                        return true;
+                }
+            }
+
+            if (griefPreventionAPI != null && NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck) {
+                Collection<me.ryanhamshire.GriefPrevention.Claim> griefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
+                if (griefPrevention.size() > 0) {
+                     if (griefPreventionAPI.getClaimAt(new Location(location.getWorld(), x, y, z), true, null) != null)
+                         return true;
+                }
+            }
+
+            if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck) {
+                UUID uuid = griefDefenderAPI.getClaimAt(new Location(location.getWorld(), x, y, z)).getOwnerUniqueId();
+                if (!uuid.equals(emptyUUID))
+                    return true;
+            }
+
+            return false;
+        });
 
         ObfuscateLootListener.randomizeChunkOre(chunk);
 
@@ -103,7 +127,7 @@ public class ChunkRegeneration {
             }
         }*/
 
-        location.getWorld().refreshChunk(chunk.getX(), chunk.getZ());
+        // location.getWorld().refreshChunk(chunk.getX(), chunk.getZ());
 
         Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
             savingMovableStructure(chunk, oldChunkSnapshot);
@@ -117,7 +141,7 @@ public class ChunkRegeneration {
             if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck)
                 griefDefenderOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
-            if (coreProtectAPI != null)
+            if (coreProtectAPI != null && readonlyConfig.coreProtectLogging)
                 coreProtectAPILogging(chunk, oldChunkSnapshot);
         });
 
@@ -173,7 +197,9 @@ public class ChunkRegeneration {
                         Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
                         if (residenceAPI.getByLoc(targetLocation) != null) {
                             BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                            perversedBlocks.put(targetLocation, block);
+                            if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+                                perversedBlocks.put(targetLocation, block);
+                            }
                         }
                     }
                 }
@@ -206,8 +232,10 @@ public class ChunkRegeneration {
                         if (griefPreventionAPI.getClaimAt(targetLocation, true, null) != null){
                             try {
                                 BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                                perversedBlocks.put(targetLocation, block);
-                            } catch (Exception e){
+                                if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+                                    perversedBlocks.put(targetLocation, block);
+                                }
+                            } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         }
@@ -248,7 +276,9 @@ public class ChunkRegeneration {
                         if (!uuid.equals(emptyUUID)) {
                             try {
                                 BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                                perversedBlocks.put(targetLocation, block);
+                                if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+                                    perversedBlocks.put(targetLocation, block);
+                                }
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }

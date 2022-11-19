@@ -44,7 +44,7 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
             hikari.addDataSourceProperty("url", url);
 
             try (Connection connection = hikari.getConnection(); Statement statement = connection.createStatement()) {
-                statement.execute("CREATE TABLE IF NOT EXISTS " + NatureRevivePlugin.readonlyConfig.databaseTableName + " (X INTEGER NOT NULL, Z INTEGER NOT NULL, TTL LONG, WORLDNAME TEXT NOT NULL, PRIMARY KEY(X, Z, WORLDNAME));");
+                statement.execute("CREATE TABLE IF NOT EXISTS " + NatureRevivePlugin.readonlyConfig.databaseTableName + " (X INTEGER NOT NULL, Z INTEGER NOT NULL, TTL LONG, WORLDNAME VARCHAR(255) NOT NULL, PRIMARY KEY(X, Z, WORLDNAME));");
             }
 
             values(); // Build up cache.
@@ -216,10 +216,10 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
             for (BukkitPositionInfo positionInfo : BukkitPositionInfoSet) {
                 cache.put(positionInfo.getLocation(), positionInfo);
 
-                preparedStatement.setInt(0, positionInfo.getX());
-                preparedStatement.setInt(1, positionInfo.getZ());
-                preparedStatement.setLong(2, positionInfo.getTTL());
-                preparedStatement.setString(3, positionInfo.getWorldName());
+                preparedStatement.setInt(1, positionInfo.getX());
+                preparedStatement.setInt(2, positionInfo.getZ());
+                preparedStatement.setLong(3, positionInfo.getTTL());
+                preparedStatement.setString(4, positionInfo.getWorldName());
                 preparedStatement.addBatch();
             }
 
@@ -238,10 +238,10 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
             for (BukkitPositionInfo positionInfo : BukkitPositionInfoSet) {
                 cache.put(positionInfo.getLocation(), positionInfo);
 
-                preparedStatement.setInt(0, positionInfo.getX());
-                preparedStatement.setInt(1, positionInfo.getZ());
-                preparedStatement.setLong(2, positionInfo.getTTL());
-                preparedStatement.setString(3, positionInfo.getWorldName());
+                preparedStatement.setInt(1, positionInfo.getX());
+                preparedStatement.setInt(2, positionInfo.getZ());
+                preparedStatement.setLong(3, positionInfo.getTTL());
+                preparedStatement.setString(4, positionInfo.getWorldName());
                 preparedStatement.addBatch();
             }
 
@@ -262,36 +262,30 @@ public class MySQLDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter 
 
             for (SQLCommand sqlCommand : sqlCommandList) {
                 if (sqlCommand.getType().equals(SQLCommand.Type.INSERT)) {
-                    preparedStatementInsert.setInt(0, sqlCommand.getBukkitPositionInfo().getX());
-                    preparedStatementInsert.setInt(1, sqlCommand.getBukkitPositionInfo().getZ());
-                    preparedStatementInsert.setLong(2, sqlCommand.getBukkitPositionInfo().getTTL());
-                    preparedStatementInsert.setString(3, sqlCommand.getBukkitPositionInfo().getWorldName());
-                    preparedStatementInsert.addBatch();
+                    preparedStatementInsert.setInt(1, sqlCommand.getBukkitPositionInfo().getX());
+                    preparedStatementInsert.setInt(2, sqlCommand.getBukkitPositionInfo().getZ());
+                    preparedStatementInsert.setLong(3, sqlCommand.getBukkitPositionInfo().getTTL());
+                    preparedStatementInsert.setString(4, sqlCommand.getBukkitPositionInfo().getWorldName());
+                    preparedStatementInsert.execute();
+                    preparedStatementInsert.clearParameters();
                 } else if (sqlCommand.getType().equals(SQLCommand.Type.UPDATE)) {
-                    preparedStatementUpdate.setInt(0, sqlCommand.getBukkitPositionInfo().getX());
-                    preparedStatementUpdate.setInt(1, sqlCommand.getBukkitPositionInfo().getZ());
-                    preparedStatementUpdate.setLong(2, sqlCommand.getBukkitPositionInfo().getTTL());
-                    preparedStatementUpdate.setString(3, sqlCommand.getBukkitPositionInfo().getWorldName());
-                    preparedStatementUpdate.addBatch();
+                    preparedStatementUpdate.setLong(1, sqlCommand.getBukkitPositionInfo().getTTL());
+                    preparedStatementUpdate.setInt(2, sqlCommand.getBukkitPositionInfo().getX());
+                    preparedStatementUpdate.setInt(3, sqlCommand.getBukkitPositionInfo().getZ());
+                    preparedStatementUpdate.setString(4, sqlCommand.getBukkitPositionInfo().getWorldName());
+                    preparedStatementUpdate.execute();
+                    preparedStatementUpdate.clearParameters();
                 } else if (sqlCommand.getType().equals(SQLCommand.Type.DELETE)) {
-                    preparedStatementDelete.setInt(0, sqlCommand.getBukkitPositionInfo().getX());
-                    preparedStatementDelete.setInt(1, sqlCommand.getBukkitPositionInfo().getZ());
-                    preparedStatementDelete.setLong(2, sqlCommand.getBukkitPositionInfo().getTTL());
+                    preparedStatementDelete.setInt(1, sqlCommand.getBukkitPositionInfo().getX());
+                    preparedStatementDelete.setInt(2, sqlCommand.getBukkitPositionInfo().getZ());
                     preparedStatementDelete.setString(3, sqlCommand.getBukkitPositionInfo().getWorldName());
-                    preparedStatementDelete.addBatch();
+                    preparedStatementDelete.execute();
+                    preparedStatementDelete.clearParameters();
                 }
             }
 
-            preparedStatementInsert.executeBatch();
-            preparedStatementInsert.clearBatch();
             preparedStatementInsert.close();
-
-            preparedStatementUpdate.executeBatch();
-            preparedStatementUpdate.clearBatch();
             preparedStatementUpdate.close();
-
-            preparedStatementDelete.executeBatch();
-            preparedStatementDelete.clearBatch();
             preparedStatementDelete.close();
         } catch (SQLException e) {
             e.printStackTrace();

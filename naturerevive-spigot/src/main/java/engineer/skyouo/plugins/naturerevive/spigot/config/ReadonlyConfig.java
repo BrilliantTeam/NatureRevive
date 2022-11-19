@@ -4,12 +4,10 @@ import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.MySQLDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLiteDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.YamlDatabaseAdapter;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.simpleyaml.configuration.file.YamlFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +30,8 @@ public class ReadonlyConfig {
     public boolean griefDefenderStrictCheck;
 
     public boolean saferOreObfuscation;
+
+    public boolean coreProtectLogging;
 
     public double minTPSCountForRegeneration;
 
@@ -56,6 +56,8 @@ public class ReadonlyConfig {
     public int blockProcessingAmountPerProcessing;
 
     public int sqlProcessingTick;
+
+    public int sqlProcessingCount;
 
     public String coreProtectUserName;
 
@@ -94,8 +96,9 @@ public class ReadonlyConfig {
 
         file.createNewFile();
 
+        this.configuration = new org.simpleyaml.configuration.file.YamlFile(file);
 
-        this.configuration = org.simpleyaml.configuration.file.YamlFile.loadConfiguration(file);
+        this.configuration.createOrLoadWithComments();
 
         if (configuration.get("config-version") == null) {
             configuration.set("debug", false);
@@ -151,6 +154,10 @@ public class ReadonlyConfig {
                     "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk.",
                     "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9")));
 
+            configuration.set("coreprotect-logging-enable", true);
+            configuration.setComment("coreprotect-logging-enable", convertListStringToString(Arrays.asList("是否啟用 CoreProtect 的紀錄功能.",
+                    "Whether or not to enable the CoreProtect logging integration.")));
+
             configuration.set("coreprotect-log-username", "#資源再生");
             configuration.setComment("coreprotect-log-username", convertListStringToString(Arrays.asList("在 CoreProtect 紀錄中，有關此插件相關改動的顯示名稱",
                     "演示圖片: https://media.discordapp.net/attachments/934304177134370847/1018496146441764954/AddText_09-11-08.12.27.png",
@@ -195,7 +202,7 @@ public class ReadonlyConfig {
                     "Please leave it as it is if your server does not have a bunch of structures/residences in a chunk."
             )));
 
-            configuration.set("block-put-action-per-n-tick", 10);
+            configuration.set("block-put-action-per-n-tick", 3);
             configuration.setComment("block-put-action-per-n-tick", convertListStringToString(Arrays.asList(
                             "每 n 個 tick 檢查是否有需要保留的方塊等待放置, 倘若該數值被設置的過久的話玩家將可能見到終界折躍門方塊突然消失, 又再次出現.",
                             "Check whether the queue has blocks need to put every n tick(s), if the value is set too high, player in the center of the end might see the end gateway suddenly vanished then appeared."
@@ -249,6 +256,11 @@ public class ReadonlyConfig {
                     "請盡量將該數值設置的低一點, 否則資料庫有可能會毀損.",
                     "How many tick(s) to execute SQL query (like insert, update, delete).",
                     "Please set it lower than 5 to prevent sql-cache sync error.")
+            ));
+
+            configuration.set("sql-processing-count", 50);
+            configuration.setComment("sql-processing-count", convertListStringToString(Arrays.asList("每次執行可以執行多少個 SQL 指令.",
+                    "How many queries to execute per execution period.")
             ));
 
             configuration.set("storage.method", "yaml");
@@ -453,6 +465,22 @@ public class ReadonlyConfig {
 
                 configuration.set("block-explosion-queue-process-per-n-tick", null);
                 configuration.set("block-explosion-queue-process-per-time", null);
+            case 11:
+                configuration.set("sql-processing-tick", 3);
+                configuration.setComment("sql-processing-tick", convertListStringToString(Arrays.asList("每幾個 tick 可以對資料庫進行增刪查改的動作.",
+                        "請盡量將該數值設置的低一點, 否則資料庫有可能會毀損.",
+                        "How many tick(s) to execute SQL query (like insert, update, delete).",
+                        "Please set it lower than 5 to prevent sql-cache sync error.")
+                ));
+
+                configuration.set("sql-processing-count", 50);
+                configuration.setComment("sql-processing-count", convertListStringToString(Arrays.asList("每次執行可以執行多少個 SQL 指令.",
+                        "How many queries to execute per execution period.")
+                ));
+
+                configuration.set("coreprotect-logging-enable", true);
+                configuration.setComment("coreprotect-logging-enable", convertListStringToString(Arrays.asList("是否啟用 CoreProtect 的紀錄功能.",
+                        "Whether or not to enable the CoreProtect logging integration.")));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -472,6 +500,7 @@ public class ReadonlyConfig {
         griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
 
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
+        coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
@@ -507,12 +536,12 @@ public class ReadonlyConfig {
             try {
                 NatureRevivePlugin.databaseConfig.save();
                 NatureRevivePlugin.databaseConfig.close();
+
+                NatureRevivePlugin.databaseConfig = determineDatabase();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
-        NatureRevivePlugin.databaseConfig = determineDatabase();
     }
 
     private long parseDuration(String duration) {

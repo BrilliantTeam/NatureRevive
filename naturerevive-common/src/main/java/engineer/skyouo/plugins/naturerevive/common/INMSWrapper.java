@@ -7,11 +7,14 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 
 import java.util.List;
+import java.util.function.BooleanSupplier;
 
 public interface INMSWrapper {
     List<String> getCompatibleNMSVersion();
 
     boolean regenerateChunk(World world, int x, int z);
+
+    boolean regenerateChunk(World world, int x, int z, IPosCalculate filter);
 
     String getNbtAsString(World world, BlockState blockState);
 

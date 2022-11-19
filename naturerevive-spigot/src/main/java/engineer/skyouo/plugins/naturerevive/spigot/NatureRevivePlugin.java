@@ -6,6 +6,7 @@ import com.griefdefender.api.Core;
 import com.griefdefender.api.GriefDefender;
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.structs.Queue;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
@@ -67,6 +68,8 @@ public class NatureRevivePlugin extends JavaPlugin {
             NatureReviveBukkitLogger.error("無法載入配置檔案!");
         }
 
+        databaseConfig = readonlyConfig.determineDatabase();
+
         nmsWrapper = Util.getNMSWrapper();
 
         for (Material ore : nmsWrapper.getOreBlocks()) {
@@ -89,6 +92,14 @@ public class NatureRevivePlugin extends JavaPlugin {
 
             return;
         }
+
+        getCommand("snapshot").setExecutor(new SnapshotCommand(this));
+        getCommand("revert").setExecutor(new RevertCommand(this));
+        getCommand("forceregenall").setExecutor(new ForceRegenAllCommand(this));
+        getCommand("testrandomizeore").setExecutor(new TestRandomizeOreCommand());
+        getCommand("reloadreviveconfig").setExecutor(new ReloadCommand());
+        getCommand("togglerevive").setExecutor(new ToggleChunkRegenerationCommand());
+        getCommand("navdebug").setExecutor(new DebugCommand());
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
@@ -202,8 +213,11 @@ public class NatureRevivePlugin extends JavaPlugin {
             getServer().getScheduler().runTaskTimer(this, () -> {
                 List<SQLCommand> sqlCommands = new ArrayList<>();
 
-                while (sqlCommandQueue.hasNext()) {
+                int i = 0;
+
+                while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
                     sqlCommands.add(sqlCommandQueue.pop());
+                    i++;
                 }
 
                 ((SQLDatabaseAdapter) databaseConfig).massExecute(sqlCommands);
@@ -229,30 +243,30 @@ public class NatureRevivePlugin extends JavaPlugin {
         try {
             Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
             coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
-            if (coreProtectAPI != null) {
+            if (coreProtectAPI != null && readonlyConfig.coreProtectLogging) {
                 NatureReviveBukkitLogger.info("&a已發現 CoreProtect, 將會啟用 CoreProtect 支援!");
             }
         } catch (Exception e) {
             NatureReviveBukkitLogger.warning("&eCoreProtect 插件並未載入, 將禁用 CoreProtect 支援!");
+
+            if (readonlyConfig.coreProtectLogging)
+                return false;
         }
 
         try {
             Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
             residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
             if (residenceAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未成功載入 Residence 領地插件!");
-                if (readonlyConfig.residenceStrictCheck) {
+                NatureReviveBukkitLogger.warning("&e未發現 Residence, 因此未載入 Residence 領地插件!");
+                if (readonlyConfig.residenceStrictCheck)
                     return false;
-                }
             } else {
                 NatureReviveBukkitLogger.info("&a發現 Residence 領地支援, 將載入 Residence 支援!");
             }
         } catch (Exception e) {
             NatureReviveBukkitLogger.warning("&e未發現 Residence 領地插件!");
-            if (readonlyConfig.residenceStrictCheck) {
-
+            if (readonlyConfig.residenceStrictCheck)
                 return false;
-            }
         }
 
         try {
@@ -260,20 +274,18 @@ public class NatureRevivePlugin extends JavaPlugin {
             griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
 
             if (griefPreventionAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未成功載入 GriefPrevention 領地插件!");
+                NatureReviveBukkitLogger.warning("&e未發現 GriefPrevention, 因此未載入 GriefPrevention 領地插件支援!");
 
-                if (readonlyConfig.griefPreventionStrictCheck) {
+                if (readonlyConfig.griefPreventionStrictCheck)
                     return false;
-                }
             } else {
                 NatureReviveBukkitLogger.info("&a發現 GriefPrevention 領地支援, 將載入 GriefPrevention 支援!");
             }
         } catch (Exception e) {
             NatureReviveBukkitLogger.warning("&e未發現 GriefPrevention 領地插件!");
 
-            if (readonlyConfig.griefPreventionStrictCheck) {
+            if (readonlyConfig.griefPreventionStrictCheck)
                 return false;
-            }
         }
 
         try {
@@ -281,20 +293,18 @@ public class NatureRevivePlugin extends JavaPlugin {
             griefDefenderAPI = GriefDefenderAPI != null ? GriefDefender.getCore() : null;
 
             if (griefDefenderAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未成功載入 GriefDefender 領地插件!");
+                NatureReviveBukkitLogger.warning("&e未發現 GriefDefender, 因此未載入 GriefDefender 領地插件!");
 
-                if (readonlyConfig.griefDefenderStrictCheck) {
+                if (readonlyConfig.griefDefenderStrictCheck)
                     return false;
-                }
             } else {
                 NatureReviveBukkitLogger.info("&a發現 GriefDefender 領地支援, 將載入 GriefDefender 支援!");
             }
         } catch (Exception e) {
             NatureReviveBukkitLogger.warning("&e未發現 GriefDefender 領地插件!");
 
-            if (readonlyConfig.griefDefenderStrictCheck) {
+            if (readonlyConfig.griefDefenderStrictCheck)
                 return false;
-            }
         }
 
         return true;

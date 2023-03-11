@@ -1,7 +1,7 @@
 name: NatureRevive
 version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin
-api-version: 1.13
+api-version: 1.17
 authors: [NCT_skyouo, twseer67875, Brilliant Server.]
 softdepend: [Residence, CoreProtect, GriefPrevention, GriefDefender]
 website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/

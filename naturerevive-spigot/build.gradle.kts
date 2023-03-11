@@ -27,7 +27,7 @@ repositories {
 dependencies {
     implementation("me.carleslc.Simple-YAML:Simple-Yaml:1.8.2")
 
-    compileOnly("org.spigotmc:spigot-api:1.13-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.17-R0.1-SNAPSHOT")
 
     compileOnly("com.zaxxer:HikariCP:4.0.3")
 

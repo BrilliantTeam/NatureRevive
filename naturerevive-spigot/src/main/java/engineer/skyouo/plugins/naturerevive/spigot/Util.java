@@ -4,7 +4,7 @@ import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.VersionUtil;
 
 public class Util {
-    private static String nmsWrapperPrefix = "engineer.skyouo.plugins.naturerevive.spigot.nms.";
+    private final static String nmsWrapperPrefix = "engineer.skyouo.plugins.naturerevive.spigot.nms.";
 
     public static INMSWrapper getNMSWrapper() {
         int[] versions = VersionUtil.getVersion();
@@ -20,8 +20,10 @@ public class Util {
                 );
             case 19:
                 return (INMSWrapper) (
-                        3 > versions[2] && versions[2] > 0 ?
+                        versions[2] == 1 || versions[2] == 2 ?
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_1") :
+                        versions[2] == 3 ?
+                        getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_3") :
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19")
                 );
         }

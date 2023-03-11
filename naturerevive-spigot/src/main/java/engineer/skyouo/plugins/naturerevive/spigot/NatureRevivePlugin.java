@@ -10,6 +10,7 @@ import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
+import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.YamlDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
@@ -119,8 +120,8 @@ public class NatureRevivePlugin extends JavaPlugin {
 
             if (readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
                 for (Player player : getServer().getOnlinePlayers()) {
-                    for (int x = -1; x < 2; x++)
-                        for (int z = -1; z < 2; z++) {
+                    for (int x = -1; x < readonlyConfig.chunkRegenerateRadiusOnAverageApplied; x++)
+                        for (int z = -1; z < readonlyConfig.chunkRegenerateRadiusOnAverageApplied; z++) {
                             if (x == z && x == 0)
                                 continue;
 
@@ -159,7 +160,7 @@ public class NatureRevivePlugin extends JavaPlugin {
                     task.regenerateChunk();
 
                     if (readonlyConfig.debug)
-                        NatureReviveBukkitLogger.debug("&7" + task.toString() + " was regenerated.");
+                        NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
                 }
             }
         }, 20L, readonlyConfig.queuePerNTick);
@@ -206,7 +207,7 @@ public class NatureRevivePlugin extends JavaPlugin {
                         e.printStackTrace();
                     }
                 }
-            };
+            }
         }, 20L, 2L);
 
         if (databaseConfig instanceof SQLDatabaseAdapter) {
@@ -230,13 +231,15 @@ public class NatureRevivePlugin extends JavaPlugin {
             }
         }, 20L, readonlyConfig.blockProcessingTick);
 
-        getServer().getScheduler().runTaskTimer(this, () -> {
-            try {
-                databaseConfig.save();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
+        if (databaseConfig instanceof YamlDatabaseAdapter) {
+            getServer().getScheduler().runTaskTimer(this, () -> {
+                try {
+                    databaseConfig.save();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
+        }
     }
 
     public static boolean checkSoftDependPlugins() {

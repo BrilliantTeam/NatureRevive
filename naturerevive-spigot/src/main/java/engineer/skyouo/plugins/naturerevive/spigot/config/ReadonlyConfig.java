@@ -20,7 +20,7 @@ public class ReadonlyConfig {
 
     private org.simpleyaml.configuration.file.YamlFile configuration;
 
-    public final int CONFIG_VERSION = 12;
+    public final int CONFIG_VERSION = 14;
 
     public boolean debug;
 
@@ -32,6 +32,8 @@ public class ReadonlyConfig {
     public boolean saferOreObfuscation;
 
     public boolean coreProtectLogging;
+
+    public boolean adaptiveLootChestReplacement;
 
     public double minTPSCountForRegeneration;
 
@@ -58,6 +60,8 @@ public class ReadonlyConfig {
     public int sqlProcessingTick;
 
     public int sqlProcessingCount;
+
+    public int chunkRegenerateRadiusOnAverageApplied;
 
     public String coreProtectUserName;
 
@@ -195,6 +199,14 @@ public class ReadonlyConfig {
                     "Please only consider to enable it when the obfuscated ores are glitched (like spawning ores at ground, spawning ores above water etc.), when this feature is on, the region y > 40 will NOT generate any ores.")
             ));
 
+            configuration.set("adaptive-loot-chest-replacement", false);
+            configuration.setComment("adaptive-loot-chest-replacement", convertListStringToString(Arrays.asList(
+                    "改變生成寶藏箱時的策略, 當偵測到寶藏箱時, 僅更新其種籽碼, 而不進行物品填充.",
+                    "當您遇到每次打開寶藏箱會再生物品的情況時, 請打開該設置.",
+                    "This option will prevent plugin from filling the loot chesting when detected the loot chest",
+                    "It should be turned on when the loot chest is filled unexpectedly.")
+            ));
+
             configuration.set("block-put-per-tick", 1024);
             configuration.setComment("block-put-per-tick", convertListStringToString(Arrays.asList(
                     "每次區域放置的保留方塊數量，倘若無特殊情況，請保持在默認值",
@@ -231,7 +243,7 @@ public class ReadonlyConfig {
             configuration.setComment("regeneration-strategy", convertListStringToString(Arrays.asList(
                     "控制區塊的生成策略以及激進程度, 可選 aggressive (激進), passive (緩和), average (均衡)",
                     "當選擇 aggressive 時, 插件將會主動載入重生過期的區塊, 該方法可以有效清空所有過期, 但較為消耗資源.",
-                    "當選擇 average 時, 插件會定期檢查玩家周圍八格的區塊是否過期, 該方法對人數均衡的伺服器較為友善.",
+                    "當選擇 average 時, 插件會定期檢查玩家周圍八格 (可以透過 average-chunk-radius 調整) 的區塊是否過期, 該方法對人數均衡的伺服器較為友善.",
                     "當選擇 passive 時, 插件將不會主動加載過期的區塊, 並將等到玩家主動加載區塊時才會進行重生,",
                     "該方法可以避免區塊重生所造成的 TPS 跌幅, 但會有部分未被玩家探索的區塊長時間未重生.",
                     "The option to determine the plugin's regeneration management strategy, valid options are 'aggressive', 'passive' and 'average'",
@@ -239,6 +251,14 @@ public class ReadonlyConfig {
                     "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
                     "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
             )));
+
+            configuration.set("average-chunk-radius", 2);
+            configuration.setComment("average-chunk-radius",
+                    convertListStringToString(Arrays.asList("調整 regeneration-strategy 為 average 時, 插件重生區塊的範圍。",
+                            "Config the radius of regenerating chunk when regeneration-strategy is set to 'average'.",
+                            "Formula: f(x) = (2x - 1) ^ 2 - 1",
+                            "(2x - 1) ^ 2 is the radius, and we reduce 1 to except the chunk where player located.")
+                    ));
 
             configuration.set("block-queue-process-per-n-tick", 10);
             configuration.setComment("block-queue-process-per-n-tick",
@@ -481,6 +501,34 @@ public class ReadonlyConfig {
                 configuration.set("coreprotect-logging-enable", true);
                 configuration.setComment("coreprotect-logging-enable", convertListStringToString(Arrays.asList("是否啟用 CoreProtect 的紀錄功能.",
                         "Whether or not to enable the CoreProtect logging integration.")));
+            case 12:
+                configuration.set("adaptive-loot-chest-replacement", false);
+                configuration.setComment("adaptive-loot-chest-replacement", convertListStringToString(Arrays.asList(
+                        "改變生成寶藏箱時的策略, 當偵測到寶藏箱時, 僅更新其種子, 而不進行物品填充.",
+                        "當您遇到每次打開寶藏箱會再生物品的情況時, 請打開該設置.",
+                        "This option will prevent plugin from filling the loot chesting when detected the loot chest",
+                        "It should be turned on when the loot chest is filled unexpectedly.")
+                ));
+            case 13:
+                configuration.setComment("regeneration-strategy", convertListStringToString(Arrays.asList(
+                        "控制區塊的生成策略以及激進程度, 可選 aggressive (激進), passive (緩和), average (均衡)",
+                        "當選擇 aggressive 時, 插件將會主動載入重生過期的區塊, 該方法可以有效清空所有過期, 但較為消耗資源.",
+                        "當選擇 average 時, 插件會定期檢查玩家周圍八格 (可以透過 average-chunk-radius 調整) 的區塊是否過期, 該方法對人數均衡的伺服器較為友善.",
+                        "當選擇 passive 時, 插件將不會主動加載過期的區塊, 並將等到玩家主動加載區塊時才會進行重生,",
+                        "該方法可以避免區塊重生所造成的 TPS 跌幅, 但會有部分未被玩家探索的區塊長時間未重生.",
+                        "The option to determine the plugin's regeneration management strategy, valid options are 'aggressive', 'passive' and 'average'",
+                        "When aggressive is chosen, the plugin will load and regenerate expired chunks periodically, this method can regenerate all chunks that is expired, but the performance cost will much higher.",
+                        "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
+                        "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
+                )));
+
+                configuration.set("average-chunk-radius", 2);
+                configuration.setComment("average-chunk-radius",
+                        convertListStringToString(Arrays.asList("調整 regeneration-strategy 為 average 時, 插件重生區塊的範圍。",
+                                "Config the radius of regenerating chunk when regeneration-strategy is set to 'average'.",
+                                "Formula: f(x) = (2x - 1) ^ 2 - 1",
+                                "(2x - 1) ^ 2 is the radius, and we reduce 1 to except the chunk where player located.")
+                        ));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -500,6 +548,7 @@ public class ReadonlyConfig {
         griefDefenderStrictCheck = configuration.getBoolean("griefdefender-strict-check", false);
 
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
+        adaptiveLootChestReplacement = configuration.getBoolean("adaptive-loot-chest-replacement", false);
         coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
@@ -513,6 +562,7 @@ public class ReadonlyConfig {
         regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
         blockProcessingTick = configuration.getInt("block-queue-process-per-n-tick", 10);
         blockProcessingAmountPerProcessing = configuration.getInt("block-queue-process-per-time", 200);
+        chunkRegenerateRadiusOnAverageApplied = configuration.getInt("average-chunk-radius", 2);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");

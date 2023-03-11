@@ -30,7 +30,7 @@ import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.nms
 public class ObfuscateLootListener implements Listener {
     private static final Random secureRandom = new SecureRandom();
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerInteractionEvent(PlayerInteractEvent event) {
         if (!event.getAction().equals(Action.RIGHT_CLICK_BLOCK)) return;
 
@@ -42,28 +42,30 @@ public class ObfuscateLootListener implements Listener {
                 return;
             }
 
-            if (!Objects.equals(craftChest.getLootTable().getKey().getKey(), LootTables.EMPTY.getKey().getKey())) {
+            if (!Objects.equals(craftChest.getLootTable(), LootTables.EMPTY.getLootTable())) {
                 if (NatureRevivePlugin.readonlyConfig.debug)
                     NatureReviveBukkitLogger.debug("&7Lootable Chest re-seeded as " + craftChest.getLootTable());
 
                 craftChest.setSeed(secureRandom.nextLong());
 
-                craftChest.getBlockInventory().clear();
+                if (!NatureRevivePlugin.readonlyConfig.adaptiveLootChestReplacement) {
+                    craftChest.getBlockInventory().clear();
 
-                craftChest.getLootTable().fillInventory(craftChest.getBlockInventory(), secureRandom,
-                        new LootContext.Builder(craftChest.getLocation())
-                                .luck(
-                                        (float) NatureRevivePlugin.nmsWrapper.getLuckForPlayer(event.getPlayer())
-                                )
-                                .killer(
-                                        event.getPlayer()
-                                ).build()
-                );
+                    craftChest.getLootTable().fillInventory(craftChest.getBlockInventory(), secureRandom,
+                            new LootContext.Builder(craftChest.getLocation())
+                                    .luck(
+                                            (float) NatureRevivePlugin.nmsWrapper.getLuckForPlayer(event.getPlayer())
+                                    )
+                                    .killer(
+                                            event.getPlayer()
+                                    ).build()
+                    );
+                }
 
                 ChunkRelatedEventListener.flagChunk(event.getClickedBlock().getLocation());
 
                 if (NatureRevivePlugin.readonlyConfig.debug)
-                    NatureReviveBukkitLogger.debug("&7Lootable Chest regenerated, seed = " + craftChest.getSeed() + ".");
+                    NatureReviveBukkitLogger.debug("&7Lootable Chest reseeded, seed = " + craftChest.getSeed() + ".");
             }
 
             // Old method might replace the loot chest which has been looted.
@@ -125,7 +127,7 @@ public class ObfuscateLootListener implements Listener {
         for (int i = 0; i < oreList.size(); i++) {
             if ((i + 1) > pairList.size()) {
                 if (NatureRevivePlugin.readonlyConfig.debug)
-                    NatureReviveBukkitLogger.debug("&7Cannot fully obfuscate ores at chunk[x=" + chunk.getX()  + ", z=" + chunk.getZ() + ", world=" + chunk.getWorld().getName() + "] (ores count: " + oreList.size() + ", replaced count: " + pairList.size() + ")!");
+                    NatureReviveBukkitLogger.debug("&7Cannot fully obfuscate ores at chunk[x=" + chunk.getX() + ", z=" + chunk.getZ() + ", world=" + chunk.getWorld().getName() + "] (ores count: " + oreList.size() + ", replaced count: " + pairList.size() + ")!");
                 break;
             }
 
@@ -143,8 +145,8 @@ public class ObfuscateLootListener implements Listener {
 
             if (NatureRevivePlugin.readonlyConfig.debug)
                 NatureReviveBukkitLogger.debug(String.format("Swap %d,%d,%d (%s) to %d,%d,%d (%s)",
-                        ore.getX(), ore.getY(), ore.getZ(), ore.getType().toString(),
-                        replaced.getX(), replaced.getY(), replaced.getZ(), blockData.getMaterial().toString()
+                        ore.getX(), ore.getY(), ore.getZ(), ore.getType(),
+                        replaced.getX(), replaced.getY(), replaced.getZ(), blockData.getMaterial()
                 ));
         }
 
@@ -155,7 +157,8 @@ public class ObfuscateLootListener implements Listener {
     private static void calculateExpectation(Chunk chunk, List<ObjectDoublePair<Location>> pairList, List<Block> oreList, int x, int y) {
         for (int z = 0; z < 16; z++) {
             Block block = chunk.getBlock(x, y, z);
-            if (block.getType().equals(Material.AIR) || block.getType().equals(Material.WATER) || block.getType().equals(Material.LAVA)) continue;
+            if (block.getType().equals(Material.AIR) || block.getType().equals(Material.WATER) || block.getType().equals(Material.LAVA))
+                continue;
 
             if (NatureRevivePlugin.readonlyConfig.saferOreObfuscation && (
                     (
@@ -194,7 +197,7 @@ public class ObfuscateLootListener implements Listener {
             int minHeight = nmsWrapper.getWorldMinHeight(top.getWorld());
 
             while (!result.getBlock().getType().equals(Material.STONE) && !result.getBlock().getType().equals(OreBlocksCompat.getSpecialMaterial("DEEPSLATE")) &&
-                    result.getBlockY() > minHeight){
+                    result.getBlockY() > minHeight) {
                 result.add(0, -1, 0);
             }
         } else {
@@ -203,7 +206,7 @@ public class ObfuscateLootListener implements Listener {
             int maxHeight = top.getWorld().getMaxHeight();
 
             while (!result.getBlock().getType().equals(Material.NETHERRACK) && !result.getBlock().getType().equals(Material.BEDROCK) &&
-                    result.getBlockY() < maxHeight){
+                    result.getBlockY() < maxHeight) {
                 result.add(0, 1, 0);
             }
         }
@@ -211,7 +214,7 @@ public class ObfuscateLootListener implements Listener {
         return result.getBlockY();
     }
 
-    private static BlockFace[] blockFaces = { BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST };
+    private static final BlockFace[] blockFaces = {BlockFace.UP, BlockFace.DOWN, BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
 
     private static boolean getIfRelativeIs(Block block, Material target) {
         for (BlockFace face : blockFaces) {

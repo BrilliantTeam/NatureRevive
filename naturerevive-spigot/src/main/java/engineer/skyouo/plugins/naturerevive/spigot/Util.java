@@ -20,11 +20,13 @@ public class Util {
                 );
             case 19:
                 return (INMSWrapper) (
+                        versions[2] == 0 ?
+                        getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19") :
                         versions[2] == 1 || versions[2] == 2 ?
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_1") :
                         versions[2] == 3 ?
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_3") :
-                        getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19")
+                        getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_4")
                 );
         }
 

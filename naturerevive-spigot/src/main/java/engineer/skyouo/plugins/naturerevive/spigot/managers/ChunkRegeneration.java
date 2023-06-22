@@ -17,6 +17,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.event.world.ChunkPopulateEvent;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -145,7 +146,8 @@ public class ChunkRegeneration {
                 coreProtectAPILogging(chunk, oldChunkSnapshot);
         });
 
-        location.getChunk().unload(true);
+        // location.getChunk().unload(true);
+        Bukkit.getScheduler().runTaskLater(instance, () -> Bukkit.getPluginManager().callEvent(new ChunkPopulateEvent(chunk)), 4L);
     }
 
     private static void coreProtectAPILogging(Chunk chunk, ChunkSnapshot oldChunkSnapshot) {

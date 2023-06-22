@@ -18,7 +18,7 @@ public class ReadonlyConfig {
 
     private final File file = new File("plugins/NatureRevive/config.yml");
 
-    private org.simpleyaml.configuration.file.YamlFile configuration;
+    private YamlFile configuration;
 
     public final int CONFIG_VERSION = 14;
 
@@ -100,7 +100,7 @@ public class ReadonlyConfig {
 
         file.createNewFile();
 
-        this.configuration = new org.simpleyaml.configuration.file.YamlFile(file);
+        this.configuration = new YamlFile(file);
 
         this.configuration.createOrLoadWithComments();
 

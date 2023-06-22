@@ -25,8 +25,7 @@ repositories {
 }
 
 dependencies {
-    implementation("me.carleslc.Simple-YAML:Simple-Yaml:1.8.2")
-
+    implementation("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
     compileOnly("org.spigotmc:spigot-api:1.17-R0.1-SNAPSHOT")
 
     compileOnly("com.zaxxer:HikariCP:4.0.3")
@@ -43,6 +42,7 @@ dependencies {
 
 tasks {
     assemble {
+        dependsOn(processResources)
         dependsOn(shadowJar)
     }
 
@@ -69,7 +69,7 @@ tasks {
     processResources {
         filteringCharset = Charsets.UTF_8.name()
         filesMatching("plugin.yml") {
-            expand(project.properties)
+            expand(rootProject.properties)
         }
     }
 }

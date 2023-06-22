@@ -28,6 +28,8 @@ public class Util {
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_3") :
                         getClassAndInit(nmsWrapperPrefix + "NMSHandler1_19_4")
                 );
+            case 20:
+                return (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_1");
         }
 
         return null;

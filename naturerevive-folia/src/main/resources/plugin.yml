@@ -1,0 +1,55 @@
+name: NatureRevive
+version: '${project.version}'
+main: engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin
+api-version: 1.19
+authors: [NCT_skyouo, twseer67875, Brilliant Server.]
+softdepend: [Residence, CoreProtect, GriefPrevention, GriefDefender]
+website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
+libraries: [org.xerial:sqlite-jdbc:3.39.3.0, mysql:mysql-connector-java:8.0.30, com.zaxxer:HikariCP:5.0.1]
+folia-supported: true
+commands:
+  snapshot:
+    description: "Take snapshot of current chunk."
+    usage: "/snapshot"
+    permission: naturerevive.snapshot
+  revert:
+    description: "Revert chunk from earlier snapshot"
+    usage: "/revert <snapshot-id>"
+    permission: naturerevive.revert
+  forceregenall:
+    description: "Force regenerate all chunk from local data."
+    usage: "/forceregenall"
+    permission: naturerevive.forceregenall
+  testrandomizeore:
+    description: "Test perlin noise from randomizeOre function."
+    usage: "/testrandomizeore"
+    permission: naturerevive.testrandomizeore
+  reloadreviveconfig:
+    aliases: [rrc]
+    description: "Reload read-only config from file."
+    usage: "/reloadreviveconfig"
+    permission: naturerevive.reloadreviveconfig
+  togglerevive:
+    aliases: [tgrv]
+    description: "Toggle whether or not to enable/disable the chunk regeneration system."
+    usage: "/togglerevive"
+    permission: naturerevive.togglerevive
+  navdebug:
+    description: "Show Debugging purpose messages"
+    usage: "/navdebug"
+    permission: naturerevive.navdebug
+permissions:
+  naturerevive.snapshot:
+    default: op
+  naturerevive.revert:
+    default: op
+  naturerevive.forceregenall:
+    default: op
+  naturerevive.testrandomizeore:
+    default: op
+  naturerevive.reloadreviveconfig:
+    default: op
+  naturerevive.togglerevive:
+    default: op
+  naturerevive.navdebug:
+    default: op

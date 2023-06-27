@@ -28,6 +28,9 @@ Spigot: 暫無<br>
 /revert <檔案名稱> - 讀取快照檔案 (位置:plugins/NatureRevive/snapshots)
 
 /reloadreviveconfig or /rrc - 重新載入插件
+
+/togglerevive or /tgrv - 暫停資源再生流程，再輸入一次指令開啟
+
 ```
 
 ## 🔓Permissions | 權限
@@ -37,6 +40,8 @@ naturerevive.snapshot - 使用/snapshot的權限
 naturerevive.revert - 使用/revert <檔案名稱>的權限
 
 naturerevive.forceregenall - 使用/forceregenall的權限
+
+naturerevive.togglerevive - 使用/togglerevive 的權限
 
 naturerevive.reloadreviveconfig - 使用/reloadreviveconfig or /rrc的權限
 

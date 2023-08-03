@@ -2,11 +2,11 @@ package engineer.skyouo.plugins.naturerevive.spigot.constants;
 
 import org.bukkit.Material;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class OreBlocksCompat {
-    private static List<Material> oreBlocks = new ArrayList<>();
+    private static Set<Material> oreBlocks = new HashSet<>();
 
     public static void addMaterial(Material material) {
         oreBlocks.add(material);
@@ -16,7 +16,7 @@ public class OreBlocksCompat {
         return Material.getMaterial(name) != null ? Material.getMaterial(name) : null;
     }
 
-    public static List<Material> values() {
+    public static Set<Material> values() {
         return oreBlocks;
     }
 

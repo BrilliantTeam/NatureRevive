@@ -20,7 +20,7 @@ public class ReadonlyConfig {
 
     private YamlFile configuration;
 
-    public final int CONFIG_VERSION = 14;
+    public final int CONFIG_VERSION = 15;
 
     public boolean debug;
 
@@ -50,6 +50,8 @@ public class ReadonlyConfig {
     public int checkChunkTTLTick;
 
     public int dataSaveTime;
+
+    public int suppressNearbyChunkCount;
 
     public int maxPlayersCountForRegeneration;
 
@@ -205,6 +207,12 @@ public class ReadonlyConfig {
                     "當您遇到每次打開寶藏箱會再生物品的情況時, 請打開該設置.",
                     "This option will prevent plugin from filling the loot chesting when detected the loot chest",
                     "It should be turned on when the loot chest is filled unexpectedly.")
+            ));
+
+            configuration.set("suppress-chunk-refresh-radius", 0);
+            configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
+                    "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
+                    "How many nearby chunks' expiration times should be updates once any chunk is active.")
             ));
 
             configuration.set("block-put-per-tick", 1024);
@@ -529,6 +537,12 @@ public class ReadonlyConfig {
                                 "Formula: f(x) = (2x - 1) ^ 2 - 1",
                                 "(2x - 1) ^ 2 is the radius, and we reduce 1 to except the chunk where player located.")
                         ));
+            case 14:
+                configuration.set("suppress-chunk-refresh-radius", 0);
+                configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
+                        "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
+                        "How many nearby chunks' expiration times should be updates once any chunk is active.")
+                ));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -549,6 +563,7 @@ public class ReadonlyConfig {
 
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
         adaptiveLootChestReplacement = configuration.getBoolean("adaptive-loot-chest-replacement", false);
+        suppressNearbyChunkCount = configuration.getInt("suppress-chunk-refresh-radius", 0);
         coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);

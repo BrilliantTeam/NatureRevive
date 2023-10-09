@@ -5,7 +5,6 @@ import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.IPosCalculate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -16,10 +15,10 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R1.block.CraftBlockStates;
-import org.bukkit.craftbukkit.v1_20_R1.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.block.CraftBlockStates;
+import org.bukkit.craftbukkit.v1_20_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -27,7 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NMSHandler1_20_1 implements INMSWrapper {
+public class NMSHandler1_20_2 implements INMSWrapper {
     /**
      * The following code is referenced from PaperMC/Paper 'b4c1ae6' patches/server/0807-Implement-regenerateChunk.patch,
      * It's under GPLv3 license, the gpl license is located as 'naturerevive-spigot/src/main/resources/GPL.txt' or 'GPL.txt' in jar distribution.
@@ -35,10 +34,9 @@ public class NMSHandler1_20_1 implements INMSWrapper {
      * The following code is not modified.
      */
     private static final ChunkStatus[] REGEN_CHUNK_STATUSES = {ChunkStatus.BIOMES, ChunkStatus.NOISE, ChunkStatus.SURFACE, ChunkStatus.CARVERS, ChunkStatus.FEATURES, ChunkStatus.INITIALIZE_LIGHT}; // Paper - implement regenerate chunk method    // end
-    // end
     @Override
     public List<String> getCompatibleNMSVersion() {
-        return List.of("1.20", "1.20.1");
+        return List.of("1.20.2");
     }
 
     @Override
@@ -49,6 +47,7 @@ public class NMSHandler1_20_1 implements INMSWrapper {
          *
          * The following code is not modified and served as original as PaperMC did.
          */
+
         ServerLevel serverLevel = ((CraftWorld) world).getHandle();
 
         if (!serverLevel.hasChunk(x, z))
@@ -211,7 +210,11 @@ public class NMSHandler1_20_1 implements INMSWrapper {
 
     @Override
     public double[] getRecentTps() {
-        return MinecraftServer.getServer().recentTps;
+        // Folia - Use Global Tick since MinecraftServer recentTps always return 0.0
+        // todo - update dev bundle
+        return new double[] {
+                20.0f, 20.0f, 20.0f, 20.0f
+        };
     }
 
     @Override

@@ -16,10 +16,10 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R1.block.CraftBlockStates;
-import org.bukkit.craftbukkit.v1_20_R1.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.block.CraftBlockStates;
+import org.bukkit.craftbukkit.v1_20_R2.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class NMSHandler1_20_1 implements INMSWrapper {
+public class NMSHandler1_20_2 implements INMSWrapper {
     /**
      * The following code is referenced from PaperMC/Paper 'b4c1ae6' patches/server/0807-Implement-regenerateChunk.patch,
      * It's under GPLv3 license, the gpl license is located as 'naturerevive-spigot/src/main/resources/GPL.txt' or 'GPL.txt' in jar distribution.
@@ -38,7 +38,7 @@ public class NMSHandler1_20_1 implements INMSWrapper {
     // end
     @Override
     public List<String> getCompatibleNMSVersion() {
-        return List.of("1.20", "1.20.1");
+        return List.of("1.20.2");
     }
 
     @Override

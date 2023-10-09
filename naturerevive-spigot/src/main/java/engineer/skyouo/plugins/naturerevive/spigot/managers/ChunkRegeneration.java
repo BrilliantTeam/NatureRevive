@@ -82,6 +82,8 @@ public class ChunkRegeneration {
             }
         }
 
+        chunk.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
+        /*
         nmsWrapper.regenerateChunk(chunk.getWorld(), chunk.getX(), chunk.getZ(), (x, y, z) -> {
             if (residenceAPI != null && NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
                 List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
@@ -107,6 +109,7 @@ public class ChunkRegeneration {
 
             return false;
         });
+        */
 
         ObfuscateLootListener.randomizeChunkOre(chunk);
 

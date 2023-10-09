@@ -11,14 +11,13 @@ import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.*;
 //import org.bukkit.event.block.BlockCookEvent;
-import org.bukkit.event.block.BlockExplodeEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.BrewEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 
 import java.util.UUID;
@@ -39,6 +38,63 @@ public class ChunkRelatedEventListener implements Listener {
             return;
 
         NatureRevivePlugin.blockQueue.add(event.getBlock().getLocation());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerInteractEvent(PlayerInteractEvent event) {
+        if (event.getClickedBlock() == null)
+            return;
+
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK)
+            return;
+
+        Location thisPoint = event.getClickedBlock().getLocation();
+        int count = Math.abs(NatureRevivePlugin.readonlyConfig.suppressNearbyChunkCount);
+        for (int i = -count;
+             i < count + 1; i++) {
+            for (int j = -count; j < count + 1; j++) {
+                Location newLocation = new Location(thisPoint.getWorld(),
+                        thisPoint.getBlockX() + 16 * i,
+                        thisPoint.getBlockY(),
+                        thisPoint.getBlockZ() + 16 * j);
+                flagChunk(newLocation);
+                log(event, newLocation);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockGrowEvent(BlockGrowEvent event) {
+        Location thisPoint = event.getBlock().getLocation();
+        int count = Math.abs(NatureRevivePlugin.readonlyConfig.suppressNearbyChunkCount);
+        for (int i = -count;
+             i < count + 1; i++) {
+            for (int j = -count; j < count + 1; j++) {
+                Location newLocation = new Location(thisPoint.getWorld(),
+                        thisPoint.getBlockX() + 16 * i,
+                        thisPoint.getBlockY(),
+                        thisPoint.getBlockZ() + 16 * j);
+                flagChunk(newLocation);
+                log(event, newLocation);
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onBlockRedstoneEvent(BlockRedstoneEvent event) {
+        Location thisPoint = event.getBlock().getLocation();
+        int count = Math.abs(NatureRevivePlugin.readonlyConfig.suppressNearbyChunkCount);
+        for (int i = -count;
+             i < count + 1; i++) {
+            for (int j = -count; j < count + 1; j++) {
+                Location newLocation = new Location(thisPoint.getWorld(),
+                        thisPoint.getBlockX() + 16 * i,
+                        thisPoint.getBlockY(),
+                        thisPoint.getBlockZ() + 16 * j);
+                flagChunk(newLocation);
+                log(event, newLocation);
+            }
+        }
     }
 
     /*

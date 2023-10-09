@@ -18,9 +18,9 @@ public class ReadonlyConfig {
 
     private final File file = new File("plugins/NatureRevive/config.yml");
 
-    private org.simpleyaml.configuration.file.YamlFile configuration;
+    private YamlFile configuration;
 
-    public final int CONFIG_VERSION = 14;
+    public final int CONFIG_VERSION = 15;
 
     public boolean debug;
 
@@ -50,6 +50,8 @@ public class ReadonlyConfig {
     public int checkChunkTTLTick;
 
     public int dataSaveTime;
+
+    public int suppressNearbyChunkCount;
 
     public int maxPlayersCountForRegeneration;
 
@@ -126,19 +128,19 @@ public class ReadonlyConfig {
             configuration.setComment("queue-process-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 處理一次區塊再生 (1 tick = 50ms)",
                             "Invoking the queue processing function every n tick(s).")
-            ));
+                    ));
 
             configuration.set("check-chunk-ttl-per-n-tick", 100);
             configuration.setComment("check-chunk-ttl-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 檢查一次過期的區塊 (過期的區塊 = 需要被再生的區塊)",
                             "Checking the expired chunks every n tick(s)")
-            ));
+                    ));
 
             configuration.set("data-save-time-tick", 300);
             configuration.setComment("data-save-time-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 將過期的區塊儲存至本地資料庫 (過期的區塊 = 需要被再生的區塊)",
                             "Saving the chunks not over TTL to the local file every n tick(s).")
-            ));
+                    ));
 
             configuration.set("residence-strict-check", false);
             configuration.setComment("residence-strict-check", convertListStringToString(Arrays.asList("是否啟用 再生含有領地的區塊，但是不再生領地範圍內的方塊 功能",
@@ -207,6 +209,12 @@ public class ReadonlyConfig {
                     "It should be turned on when the loot chest is filled unexpectedly.")
             ));
 
+            configuration.set("suppress-chunk-refresh-radius", 0);
+            configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
+                    "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
+                    "How many nearby chunks' expiration times should be updates once any chunk is active.")
+            ));
+
             configuration.set("block-put-per-tick", 1024);
             configuration.setComment("block-put-per-tick", convertListStringToString(Arrays.asList(
                     "每次區域放置的保留方塊數量，倘若無特殊情況，請保持在默認值",
@@ -264,7 +272,7 @@ public class ReadonlyConfig {
             configuration.setComment("block-queue-process-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 處理一次事件影響之區塊計算 (1 tick = 50ms)",
                             "Proceeding the chunks flagging function every n tick(s).")
-            ));
+                    ));
 
             configuration.set("block-queue-process-per-time", 200);
             configuration.setComment("block-queue-process-per-time", convertListStringToString(Arrays.asList("每次可以處理幾個被事件影響的方塊.",
@@ -473,7 +481,7 @@ public class ReadonlyConfig {
                 configuration.setComment("block-explosion-queue-process-per-n-tick",
                         convertListStringToString(Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
                                 "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
-                ));
+                        ));
 
                 configuration.set("block-explosion-queue-process-per-time", 200);
                 configuration.setComment("block-explosion-queue-process-per-time", convertListStringToString(Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
@@ -529,6 +537,12 @@ public class ReadonlyConfig {
                                 "Formula: f(x) = (2x - 1) ^ 2 - 1",
                                 "(2x - 1) ^ 2 is the radius, and we reduce 1 to except the chunk where player located.")
                         ));
+            case 14:
+                configuration.set("suppress-chunk-refresh-radius", 0);
+                configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
+                        "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
+                        "How many nearby chunks' expiration times should be updates once any chunk is active.")
+                ));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -549,6 +563,7 @@ public class ReadonlyConfig {
 
         saferOreObfuscation = configuration.getBoolean("safer-ore-obfuscation", false);
         adaptiveLootChestReplacement = configuration.getBoolean("adaptive-loot-chest-replacement", false);
+        suppressNearbyChunkCount = configuration.getInt("suppress-chunk-refresh-radius", 0);
         coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);

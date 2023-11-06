@@ -162,6 +162,11 @@ public class NatureRevivePlugin extends JavaPlugin {
                     if (readonlyConfig.debug)
                         NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
                 }
+            }else {
+                // 調味未達成 無法生成區塊 清除序列
+                while (queue.hasNext()){
+                    queue.pop();
+                }
             }
         }, 20L, readonlyConfig.queuePerNTick);
 
@@ -319,6 +324,7 @@ public class NatureRevivePlugin extends JavaPlugin {
     }
 
     private boolean isSuitableForChunkRegeneration() {
-        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && nmsWrapper.getRecentTps()[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive;
+        // 新增時間閥
+        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && nmsWrapper.getRecentTps()[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.is_in_spawntime();
     }
 }

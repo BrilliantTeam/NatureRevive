@@ -325,6 +325,6 @@ public class NatureRevivePlugin extends JavaPlugin {
 
     private boolean isSuitableForChunkRegeneration() {
         // 新增時間閥
-        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && nmsWrapper.getRecentTps()[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.is_in_spawntime();
+        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && nmsWrapper.getRecentTps()[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.isCurrentTimeAllowForRSC();
     }
 }

@@ -98,7 +98,7 @@ public class ReadonlyConfig {
 
     public String jdbcConnectionString;
 
-    public String spawntimer;
+    public String spawnTimer;
 
     public ReadonlyConfig() throws IOException {
         new File("plugins/NatureRevive").mkdirs();
@@ -556,8 +556,10 @@ public class ReadonlyConfig {
                 configuration.set("spawn-timer", "0:00-7:00");
                 configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
                         "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
-                        "格式為24小時制 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
-                        "i am a cat weee! :DDD"
+                        "格式為24小時制，0不可省略 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
+                        "i am a cat weee! :DDD",
+                        "or a dog? woooooof!"
+
                 )));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
@@ -612,7 +614,7 @@ public class ReadonlyConfig {
         databaseUsername = configuration.getString("storage.database-username", "root");
         databasePassword = configuration.getString("storage.database-password", "20480727");
         jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
-        spawntimer = configuration.getString("spawn-timer","0:00-7:00");
+        spawnTimer = configuration.getString("spawn-timer","0:00-7:00");
         if (NatureRevivePlugin.databaseConfig != null) {
             try {
                 NatureRevivePlugin.databaseConfig.save();
@@ -657,12 +659,12 @@ public class ReadonlyConfig {
     }
 
     //判定當前系統時間是否在表定範圍內
-    public boolean is_in_spawntime(){
+    public boolean isCurrentTimeAllowForRSC(){
+        String[] timeParts = spawnTimer.split("-");
+        LocalTime timeRangeStart = LocalTime.parse(timeParts[0]); // 設定起始時間
+        LocalTime timeRangeEnd =  LocalTime.parse(timeParts[1]); // 設定結束時間
         LocalTime currentTime = LocalTime.now();
-
-        LocalTime timeRangeStart = LocalTime.of(Integer.parseInt(spawntimer.split("-")[0].split(":")[0]), Integer.parseInt(spawntimer.split("-")[0].split(":")[1])); // 设定开始时间为 1:00
-        LocalTime timeRangeEnd = LocalTime.of(Integer.parseInt(spawntimer.split("-")[1].split(":")[0]), Integer.parseInt(spawntimer.split("-")[1].split(":")[1])); // 设定结束时间为 13:00
-
+        //判定是否可以汪...是否藉於時間內 (r: T/F)
         return currentTime.isAfter(timeRangeStart) && currentTime.isBefore(timeRangeEnd);
     }
 }

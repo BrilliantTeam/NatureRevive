@@ -9,6 +9,7 @@ import org.simpleyaml.configuration.file.YamlFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -97,6 +98,8 @@ public class ReadonlyConfig {
 
     public String jdbcConnectionString;
 
+    public String spawnTimer;
+
     public ReadonlyConfig() throws IOException {
         new File("plugins/NatureRevive").mkdirs();
 
@@ -128,19 +131,19 @@ public class ReadonlyConfig {
             configuration.setComment("queue-process-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 處理一次區塊再生 (1 tick = 50ms)",
                             "Invoking the queue processing function every n tick(s).")
-            ));
+                    ));
 
             configuration.set("check-chunk-ttl-per-n-tick", 100);
             configuration.setComment("check-chunk-ttl-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 檢查一次過期的區塊 (過期的區塊 = 需要被再生的區塊)",
                             "Checking the expired chunks every n tick(s)")
-            ));
+                    ));
 
             configuration.set("data-save-time-tick", 300);
             configuration.setComment("data-save-time-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 將過期的區塊儲存至本地資料庫 (過期的區塊 = 需要被再生的區塊)",
                             "Saving the chunks not over TTL to the local file every n tick(s).")
-            ));
+                    ));
 
             configuration.set("residence-strict-check", false);
             configuration.setComment("residence-strict-check", convertListStringToString(Arrays.asList("是否啟用 再生含有領地的區塊，但是不再生領地範圍內的方塊 功能",
@@ -240,7 +243,13 @@ public class ReadonlyConfig {
                     "重生區塊的最高玩家上限, 倘若玩家數高於該數值, 區塊重生將會被擱置.",
                     "The maximum players count for regenerating expired chunks, if server's players count is greater than this value, the regeneration task will be stopped."
             )));
-
+            //新增時間閥 英文我好懶(
+            configuration.set("spawn-timer", "0:00-7:00");
+            configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
+                    "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
+                    "格式為24小時制 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
+                    "i am a cat weee! :DDD"
+            )));
             configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
             configuration.setComment("blacklist-worlds", convertListStringToString(Arrays.asList(
                     "該列表內的世界將會被重生系統忽略, 並將不會再生.",
@@ -272,7 +281,7 @@ public class ReadonlyConfig {
             configuration.setComment("block-queue-process-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 處理一次事件影響之區塊計算 (1 tick = 50ms)",
                             "Proceeding the chunks flagging function every n tick(s).")
-            ));
+                    ));
 
             configuration.set("block-queue-process-per-time", 200);
             configuration.setComment("block-queue-process-per-time", convertListStringToString(Arrays.asList("每次可以處理幾個被事件影響的方塊.",
@@ -481,7 +490,7 @@ public class ReadonlyConfig {
                 configuration.setComment("block-explosion-queue-process-per-n-tick",
                         convertListStringToString(Arrays.asList("每 n 個 tick 處理一次爆炸影響之區塊計算 (1 tick = 50ms)",
                                 "Proceeding the block/entity explosions affected chunks calculation function every n tick(s).")
-                ));
+                        ));
 
                 configuration.set("block-explosion-queue-process-per-time", 200);
                 configuration.setComment("block-explosion-queue-process-per-time", convertListStringToString(Arrays.asList("每次可以處理幾個被爆炸範圍影響的方塊.",
@@ -542,7 +551,16 @@ public class ReadonlyConfig {
                 configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
                         "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
                         "How many nearby chunks' expiration times should be updates once any chunk is active.")
+
                 ));
+                configuration.set("spawn-timer", "0:00-7:00");
+                configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
+                        "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
+                        "格式為24小時制，0不可省略 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
+                        "i am a cat weee! :DDD",
+                        "or a dog? woooooof!"
+
+                )));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -596,7 +614,7 @@ public class ReadonlyConfig {
         databaseUsername = configuration.getString("storage.database-username", "root");
         databasePassword = configuration.getString("storage.database-password", "20480727");
         jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
-
+        spawnTimer = configuration.getString("spawn-timer","0:00-7:00");
         if (NatureRevivePlugin.databaseConfig != null) {
             try {
                 NatureRevivePlugin.databaseConfig.save();
@@ -638,6 +656,16 @@ public class ReadonlyConfig {
 
     private String convertListStringToString(List<String> comments) {
         return String.join(System.lineSeparator(), comments);
+    }
+
+    //判定當前系統時間是否在表定範圍內
+    public boolean isCurrentTimeAllowForRSC(){
+        String[] timeParts = spawnTimer.split("-");
+        LocalTime timeRangeStart = LocalTime.parse(timeParts[0]); // 設定起始時間
+        LocalTime timeRangeEnd =  LocalTime.parse(timeParts[1]); // 設定結束時間
+        LocalTime currentTime = LocalTime.now();
+        //判定是否可以汪...是否藉於時間內 (r: T/F)
+        return currentTime.isAfter(timeRangeStart) && currentTime.isBefore(timeRangeEnd);
     }
 }
 

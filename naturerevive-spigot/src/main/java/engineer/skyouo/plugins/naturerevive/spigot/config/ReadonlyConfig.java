@@ -99,6 +99,8 @@ public class ReadonlyConfig {
     public String jdbcConnectionString;
 
     public String spawnTimer;
+    public Integer Enable_SpawningTime;
+    public Integer Enable_SpawningChunks;
 
     public ReadonlyConfig() throws IOException {
         new File("plugins/NatureRevive").mkdirs();
@@ -250,6 +252,24 @@ public class ReadonlyConfig {
                     "格式為24小時制 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
                     "i am a cat weee! :DDD"
             )));
+            //新增啟動插件時自動生成指定數量區塊
+            configuration.set("Enable_SpawningTime",80);
+            configuration.setComment("Enable_SpawningTime", convertListStringToString(Arrays.asList(
+                    "設定當插件啟動時，花費N秒進行已過期的資源重生再開啟伺服器。重生時將可能會卡死主線程",
+                    "設定為0則不啟用此選項，若與下方生成量同時使用，則已先到達的閥值為。",
+                    "該功能建議搭配自動重啟插件，以利確保伺服器重啟時自動生成一定數量的區塊，確保資源永續性",
+                    "*不要 不要 不要在啟用該功能時用PlugMan或是其他熱插拔套件在啟動時reload plugin，除非你希望卡死你自己或是讓看門狗來咬你*",
+                    "don,t be a fox , be a cat :D"
+            )));
+            configuration.set("Enable_SpawningChunks",100);
+            configuration.setComment("Enable_SpawningTime", convertListStringToString(Arrays.asList(
+                    "設定當插件啟動時，至少重生N個區塊再開啟伺服器。重生時將可能會卡死主線程",
+                    "設定為0則不啟用此選項，若與上方時間閥同時使用，則已先到達的閥值為。",
+                    "該功能建議搭配自動重啟插件，以利確保伺服器重啟時自動生成一定數量的區塊，確保資源永續性",
+                    "*不要 不要 不要在啟用該功能時用PlugMan或是其他熱插拔套件在啟動時reload plugin，除非你希望卡死你自己或是讓看門狗來咬你*",
+                    "Cat like eat fish :D"
+            )));
+            // cat end
             configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
             configuration.setComment("blacklist-worlds", convertListStringToString(Arrays.asList(
                     "該列表內的世界將會被重生系統忽略, 並將不會再生.",
@@ -561,6 +581,23 @@ public class ReadonlyConfig {
                         "or a dog? woooooof!"
 
                 )));
+            case 15:
+                configuration.set("Enable_SpawningTime",80);
+                configuration.setComment("Enable_SpawningTime", convertListStringToString(Arrays.asList(
+                        "設定當插件啟動時，花費N秒進行已過期的資源重生再開啟伺服器。重生時將可能會卡死主線程",
+                        "設定為0則不啟用此選項，若與下方生成量同時使用，則已先到達的閥值為。",
+                        "該功能建議搭配自動重啟插件，以利確保伺服器重啟時自動生成一定數量的區塊，確保資源永續性",
+                        "*不要 不要 不要在啟用該功能時用PlugMan或是其他熱插拔套件在啟動時reload plugin，除非你希望卡死你自己或是讓看門狗來咬你*",
+                        "don,t be a fox , be a cat :D"
+                )));
+                configuration.set("Enable_SpawningChunks",100);
+                configuration.setComment("Enable_SpawningTime", convertListStringToString(Arrays.asList(
+                        "設定當插件啟動時，至少重生N個區塊再開啟伺服器。重生時將可能會卡死主線程",
+                        "設定為0則不啟用此選項，若與上方時間閥同時使用，則已先到達的閥值為。",
+                        "該功能建議搭配自動重啟插件，以利確保伺服器重啟時自動生成一定數量的區塊，確保資源永續性",
+                        "*不要 不要 不要在啟用該功能時用PlugMan或是其他熱插拔套件在啟動時reload plugin，除非你希望卡死你自己或是讓看門狗來咬你*",
+                        "Cat like eat fish :D"
+                )));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -615,6 +652,8 @@ public class ReadonlyConfig {
         databasePassword = configuration.getString("storage.database-password", "20480727");
         jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
         spawnTimer = configuration.getString("spawn-timer","0:00-7:00");
+        Enable_SpawningTime = configuration.getInt("Enable_SpawningTime");
+        Enable_SpawningChunks = configuration.getInt("Enable_SpawningChunks");
         if (NatureRevivePlugin.databaseConfig != null) {
             try {
                 NatureRevivePlugin.databaseConfig.save();

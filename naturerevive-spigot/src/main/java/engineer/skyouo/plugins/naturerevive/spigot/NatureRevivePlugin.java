@@ -32,6 +32,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class NatureRevivePlugin extends JavaPlugin {
     public static boolean enableRevive = true;
@@ -57,6 +59,8 @@ public class NatureRevivePlugin extends JavaPlugin {
     public static final Queue<BlockStateWithPos> blockStateWithPosQueue = new Queue<>();
     public static final Queue<BlockDataChangeWithPos> blockDataChangeWithPos = new Queue<>();
     public static final Queue<SQLCommand> sqlCommandQueue = new Queue<>();
+    static boolean SpawningLock;
+    static Integer SpawnChunks;
 
     @Override
     public void onEnable() {
@@ -106,6 +110,41 @@ public class NatureRevivePlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
 
         // todo
+
+        // do a cat
+        if (!(readonlyConfig.Enable_SpawningChunks <= 0 || readonlyConfig.Enable_SpawningTime <=0)) {
+            SpawningLock = false;
+
+            // 兩種閥門模式 : 時間(TLE) | 區塊量 (F_lmt)
+            Timer cat_timer = new Timer();
+            cat_timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    SpawningLock = true;
+                }
+            }, readonlyConfig.Enable_SpawningTime * 1000); // X秒後強制結束區塊生成
+            List<BukkitPositionInfo> fox = databaseConfig.values();
+            for (BukkitPositionInfo positionInfo : fox) {
+                if (SpawningLock) {
+                    break;
+                }
+                if (SpawnChunks >= readonlyConfig.Enable_SpawningChunks) {
+                    break;
+                }
+                if (!positionInfo.isOverTTL()){
+                    continue;
+                }
+                positionInfo.regenerateChunk();
+                NatureReviveBukkitLogger.debug("&7" + positionInfo + " was regenerated on plugin enable. uwu");
+                databaseConfig.unset(positionInfo);
+                SpawnChunks++;
+            }
+            NatureReviveBukkitLogger.debug("&7 The enable respawn task has finished :D");
+            cat_timer.cancel();
+        }else {
+            NatureReviveBukkitLogger.debug("&7 The enable respawn task has passed due to config settings :(");
+        }
+
 
         getServer().getScheduler().runTaskTimer(this, () -> {
             if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {

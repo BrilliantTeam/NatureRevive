@@ -1,10 +1,11 @@
 package engineer.skyouo.plugins.naturerevive.spigot;
 
-import com.bekvon.bukkit.residence.api.ResidenceApi;
-import com.bekvon.bukkit.residence.api.ResidenceInterface;
-import com.griefdefender.api.Core;
-import com.griefdefender.api.GriefDefender;
+//import com.bekvon.bukkit.residence.api.ResidenceApi;
+//import com.bekvon.bukkit.residence.api.ResidenceInterface;
+//import com.griefdefender.api.Core;
+//import com.griefdefender.api.GriefDefender;
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
+import engineer.skyouo.plugins.naturerevive.common.structs.PositionInfo;
 import engineer.skyouo.plugins.naturerevive.common.structs.Queue;
 import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
@@ -24,16 +25,16 @@ import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.nio.file.Files;
+import java.util.*;
 
 public class NatureRevivePlugin extends JavaPlugin {
     public static boolean enableRevive = true;
@@ -47,10 +48,10 @@ public class NatureRevivePlugin extends JavaPlugin {
     public static ReadonlyConfig readonlyConfig;
     public static DatabaseConfig databaseConfig;
 
-    public static ResidenceInterface residenceAPI;
+//    public static ResidenceInterface residenceAPI;
     public static CoreProtectAPI coreProtectAPI;
     public static DataStore griefPreventionAPI;
-    public static Core griefDefenderAPI;
+//    public static Core griefDefenderAPI;
 
     public static SuspendedZone suspendedZone;
 
@@ -111,48 +112,15 @@ public class NatureRevivePlugin extends JavaPlugin {
 
         // todo
 
-        // do a cat
-        if (!(readonlyConfig.Enable_SpawningChunks <= 0 || readonlyConfig.Enable_SpawningTime <=0)) {
-            SpawningLock = false;
-
-            // 兩種閥門模式 : 時間(TLE) | 區塊量 (F_lmt)
-            Timer cat_timer = new Timer();
-            cat_timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    SpawningLock = true;
-                }
-            }, readonlyConfig.Enable_SpawningTime * 1000); // X秒後強制結束區塊生成
-            List<BukkitPositionInfo> fox = databaseConfig.values();
-            for (BukkitPositionInfo positionInfo : fox) {
-                if (SpawningLock) {
-                    break;
-                }
-                if (SpawnChunks >= readonlyConfig.Enable_SpawningChunks) {
-                    break;
-                }
-                if (!positionInfo.isOverTTL()){
-                    continue;
-                }
-                positionInfo.regenerateChunk();
-                NatureReviveBukkitLogger.debug("&7" + positionInfo + " was regenerated on plugin enable. uwu");
-                databaseConfig.unset(positionInfo);
-                SpawnChunks++;
-            }
-            NatureReviveBukkitLogger.debug("&7 The enable respawn task has finished :D");
-            cat_timer.cancel();
-        }else {
-            NatureReviveBukkitLogger.debug("&7 The enable respawn task has passed due to config settings :(");
-        }
-
-
         getServer().getScheduler().runTaskTimer(this, () -> {
             if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
                 List<BukkitPositionInfo> positionInfos = databaseConfig.values();
+                System.out.println("checking chunks");
                 for (BukkitPositionInfo positionInfo : positionInfos) {
                     if (positionInfo.isOverTTL()) {
                         queue.add(positionInfo);
                         databaseConfig.unset(positionInfo);
+                        System.out.println(positionInfo + " isoverttl");
                     }
                 }
             }
@@ -186,25 +154,20 @@ public class NatureRevivePlugin extends JavaPlugin {
                     if (readonlyConfig.ignoredWorld.contains(task.getLocation().getWorld().getName()))
                         continue;
 
-                    if (BukkitPositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck)
-                        continue;
+//                    if (BukkitPositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck)
+//                        continue;
 
                     if (BukkitPositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck)
                         continue;
 
-                    if (BukkitPositionInfo.isGriefDefender(task.getLocation()) && !readonlyConfig.griefDefenderStrictCheck) {
-                        continue;
-                    }
+//                    if (BukkitPositionInfo.isGriefDefender(task.getLocation()) && !readonlyConfig.griefDefenderStrictCheck) {
+//                        continue;
+//                    }
 
                     task.regenerateChunk();
 
                     if (readonlyConfig.debug)
                         NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
-                }
-            }else {
-                // 調味未達成 無法生成區塊 清除序列
-                while (queue.hasNext()){
-                    queue.pop();
                 }
             }
         }, 20L, readonlyConfig.queuePerNTick);
@@ -300,21 +263,21 @@ public class NatureRevivePlugin extends JavaPlugin {
                 return false;
         }
 
-        try {
-            Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
-            residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
-            if (residenceAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 Residence, 因此未載入 Residence 領地插件!");
-                if (readonlyConfig.residenceStrictCheck)
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 Residence 領地支援, 將載入 Residence 支援!");
-            }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 Residence 領地插件!");
-            if (readonlyConfig.residenceStrictCheck)
-                return false;
-        }
+//        try {
+//            Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
+//            residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
+//            if (residenceAPI == null) {
+//                NatureReviveBukkitLogger.warning("&e未發現 Residence, 因此未載入 Residence 領地插件!");
+//                if (readonlyConfig.residenceStrictCheck)
+//                    return false;
+//            } else {
+//                NatureReviveBukkitLogger.info("&a發現 Residence 領地支援, 將載入 Residence 支援!");
+//            }
+//        } catch (Exception e) {
+//            NatureReviveBukkitLogger.warning("&e未發現 Residence 領地插件!");
+//            if (readonlyConfig.residenceStrictCheck)
+//                return false;
+//        }
 
         try {
             Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
@@ -335,31 +298,38 @@ public class NatureRevivePlugin extends JavaPlugin {
                 return false;
         }
 
-        try {
-            Plugin GriefDefenderAPI = instance.getServer().getPluginManager().getPlugin("GriefDefender");
-            griefDefenderAPI = GriefDefenderAPI != null ? GriefDefender.getCore() : null;
-
-            if (griefDefenderAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 GriefDefender, 因此未載入 GriefDefender 領地插件!");
-
-                if (readonlyConfig.griefDefenderStrictCheck)
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 GriefDefender 領地支援, 將載入 GriefDefender 支援!");
-            }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 GriefDefender 領地插件!");
-
-            if (readonlyConfig.griefDefenderStrictCheck)
-                return false;
-        }
+//        try {
+//            Plugin GriefDefenderAPI = instance.getServer().getPluginManager().getPlugin("GriefDefender");
+//            griefDefenderAPI = GriefDefenderAPI != null ? GriefDefender.getCore() : null;
+//
+//            if (griefDefenderAPI == null) {
+//                NatureReviveBukkitLogger.warning("&e未發現 GriefDefender, 因此未載入 GriefDefender 領地插件!");
+//
+//                if (readonlyConfig.griefDefenderStrictCheck)
+//                    return false;
+//            } else {
+//                NatureReviveBukkitLogger.info("&a發現 GriefDefender 領地支援, 將載入 GriefDefender 支援!");
+//            }
+//        } catch (Exception e) {
+//            NatureReviveBukkitLogger.warning("&e未發現 GriefDefender 領地插件!");
+//
+//            if (readonlyConfig.griefDefenderStrictCheck)
+//                return false;
+//        }
 
         return true;
     }
 
     @Override
     public void onDisable() {
-
+        // 關閉時將未來得及處理的旭六重新存入dp
+        if (queue.size() <= 0){
+            return;
+        }
+        while (queue.hasNext()){
+            BukkitPositionInfo task = queue.pop();
+            databaseConfig.set(task);
+        }
     }
 
     private boolean isSuitableForChunkRegeneration() {

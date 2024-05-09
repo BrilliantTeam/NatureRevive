@@ -189,11 +189,11 @@ public class ChunkRelatedEventListener implements Listener {
         if (NatureRevivePlugin.readonlyConfig.ignoredWorld.contains(location.getWorld().getName()))
             return;
 
-        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
-                return;
-            }
-        }
+//        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
+//            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
+//                return;
+//            }
+//        }
 
         if (NatureRevivePlugin.griefPreventionAPI != null && !NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck){
             if (NatureRevivePlugin.griefPreventionAPI.getClaimAt(location, true, null) != null){
@@ -201,12 +201,12 @@ public class ChunkRelatedEventListener implements Listener {
             }
         }
 
-        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
-            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            if (!uuid.equals(emptyUUID)){
-                return;
-            }
-        }
+//        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
+//            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
+//            if (!uuid.equals(emptyUUID)){
+//                return;
+//            }
+//        }
 
         BukkitPositionInfo positionInfo = new BukkitPositionInfo(location, System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.ttlDuration);
 
@@ -214,11 +214,11 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     private void log(Event event, Location location) {
-        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
-                return;
-            }
-        }
+//        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
+//            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
+//                return;
+//            }
+//        }
 
         if (NatureRevivePlugin.griefPreventionAPI != null && !NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck){
             if (NatureRevivePlugin.griefPreventionAPI.getClaimAt(location, true, null) != null){
@@ -226,12 +226,12 @@ public class ChunkRelatedEventListener implements Listener {
             }
         }
 
-        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
-            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            if (!uuid.equals(emptyUUID)){
-                return;
-            }
-        }
+//        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
+//            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
+//            if (!uuid.equals(emptyUUID)){
+//                return;
+//            }
+//        }
 
         if (NatureRevivePlugin.databaseConfig.get(location) != null)
             return;

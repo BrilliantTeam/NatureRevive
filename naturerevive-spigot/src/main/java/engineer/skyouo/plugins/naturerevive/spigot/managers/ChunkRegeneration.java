@@ -1,7 +1,7 @@
 package engineer.skyouo.plugins.naturerevive.spigot.managers;
 
-import com.bekvon.bukkit.residence.protection.ClaimedResidence;
-import com.bekvon.bukkit.residence.protection.ResidenceManager;
+//import com.bekvon.bukkit.residence.protection.ClaimedResidence;
+//import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
@@ -44,19 +44,19 @@ public class ChunkRegeneration {
         ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot();
 
         // todo: make this asynchronous.
-        if (residenceAPI != null && NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
-            List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
-            if (residences.size() > 0) {
-
-                for (BlockState blockState : chunk.getTileEntities()) {
-                    if (residenceAPI.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
-                        String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
-
-                        nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
-                    }
-                }
-            }
-        }
+//        if (residenceAPI != null && NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
+//            List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
+//            if (residences.size() > 0) {
+//
+//                for (BlockState blockState : chunk.getTileEntities()) {
+//                    if (residenceAPI.getByLoc(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())) != null) {
+//                        String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
+//
+//                        nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
+//                    }
+//                }
+//            }
+//        }
 
         if (griefPreventionAPI != null && NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck) {
             Collection<me.ryanhamshire.GriefPrevention.Claim> griefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
@@ -71,16 +71,16 @@ public class ChunkRegeneration {
             }
         }
 
-        if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck) {
-            for (BlockState blockState : chunk.getTileEntities()){
-                UUID uuid = griefDefenderAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())).getOwnerUniqueId();
-                if (!uuid.equals(emptyUUID)) {
-                    String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
-
-                    nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
-                }
-            }
-        }
+//        if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck) {
+//            for (BlockState blockState : chunk.getTileEntities()){
+//                UUID uuid = griefDefenderAPI.getClaimAt(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ())).getOwnerUniqueId();
+//                if (!uuid.equals(emptyUUID)) {
+//                    String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
+//
+//                    nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
+//                }
+//            }
+//        }
 
         chunk.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
         /*
@@ -136,14 +136,14 @@ public class ChunkRegeneration {
         Bukkit.getScheduler().runTaskAsynchronously(instance, () -> {
             savingMovableStructure(chunk, oldChunkSnapshot);
 
-            if (residenceAPI != null && readonlyConfig.residenceStrictCheck)
-                residenceOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
+//            if (residenceAPI != null && readonlyConfig.residenceStrictCheck)
+//                residenceOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
             if (griefPreventionAPI != null && readonlyConfig.griefPreventionStrictCheck)
                 griefPreventionOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
-            if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck)
-                griefDefenderOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
+//            if (griefDefenderAPI != null && readonlyConfig.griefDefenderStrictCheck)
+//                griefDefenderOldStateRevert(chunk, oldChunkSnapshot, nbtWithPos);
 
             if (coreProtectAPI != null && readonlyConfig.coreProtectLogging)
                 coreProtectAPILogging(chunk, oldChunkSnapshot);
@@ -194,35 +194,35 @@ public class ChunkRegeneration {
     private static void residenceOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
         Map<Location, BlockData> perversedBlocks = new HashMap<>();
 
-        List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
-        if (residences.size() > 0) {
-            for (int x = 0; x < 16; x++) {
-                for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y <= chunk.getWorld().getMaxHeight(); y++) {
-                    for (int z = 0; z < 16; z++) {
-                        Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (residenceAPI.getByLoc(targetLocation) != null) {
-                            BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                            if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
-                                perversedBlocks.put(targetLocation, block);
-                            }
-                        }
-                    }
-                }
-            }
-
-            setBlocksSynchronous(perversedBlocks, tileEntities);
-
-            /*if (tileEntities.size() > 0) {
-                for (NbtWithPos tileEntityPos : tileEntities) {
-                    BlockEntity tileEntity = (((CraftWorld) location.getWorld()).getHandle()).getBlockEntity(new BlockPos(tileEntityPos.getLocation().getBlockX(), tileEntityPos.getLocation().getBlockY(), tileEntityPos.getLocation().getBlockZ()));
-                    try {
-                        tileEntity.load(tileEntityPos.getNbt());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }*/
-        }
+//        List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
+//        if (residences.size() > 0) {
+//            for (int x = 0; x < 16; x++) {
+//                for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y <= chunk.getWorld().getMaxHeight(); y++) {
+//                    for (int z = 0; z < 16; z++) {
+//                        Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+//                        if (residenceAPI.getByLoc(targetLocation) != null) {
+//                            BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+//                            if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+//                                perversedBlocks.put(targetLocation, block);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//
+//            setBlocksSynchronous(perversedBlocks, tileEntities);
+//
+//            /*if (tileEntities.size() > 0) {
+//                for (NbtWithPos tileEntityPos : tileEntities) {
+//                    BlockEntity tileEntity = (((CraftWorld) location.getWorld()).getHandle()).getBlockEntity(new BlockPos(tileEntityPos.getLocation().getBlockX(), tileEntityPos.getLocation().getBlockY(), tileEntityPos.getLocation().getBlockZ()));
+//                    try {
+//                        tileEntity.load(tileEntityPos.getNbt());
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }*/
+//        }
     }
 
     private static void griefPreventionOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities){
@@ -253,47 +253,47 @@ public class ChunkRegeneration {
     }
 
     private static void griefDefenderOldStateRevert(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
-        Map<Location, BlockData> perversedBlocks = new HashMap<>();
-
-        List<UUID> claimUUIDList = new ArrayList<>();for (int x = 0; x < 16; x++) {
-            for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y < chunk.getWorld().getMaxHeight() - 1; y++) {
-                for (int z = 0; z < 16; z++) {
-                    Location claimLocation = chunk.getBlock(x, y, z).getLocation();
-                    UUID uuid = griefDefenderAPI.getClaimAt(claimLocation).getOwnerUniqueId();
-
-                    if (!uuid.equals(emptyUUID)) {
-                        com.griefdefender.api.claim.Claim claim = griefDefenderAPI.getClaimAt(claimLocation);
-                        UUID claimUUID = claim.getUniqueId();
-                        if (!claimUUIDList.contains(claimUUID)) {
-                            claimUUIDList.add(claimUUID);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (claimUUIDList.size() > 0) {
-            for (int x = 0; x < 16; x++) {
-                for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y < chunk.getWorld().getMaxHeight() - 1 ; y++) {
-                    for (int z = 0; z < 16; z++) {
-                        Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        UUID uuid = griefDefenderAPI.getClaimAt(targetLocation).getOwnerUniqueId();
-                        if (!uuid.equals(emptyUUID)) {
-                            try {
-                                BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                                if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
-                                    perversedBlocks.put(targetLocation, block);
-                                }
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        setBlocksSynchronous(perversedBlocks, tileEntities);
+//        Map<Location, BlockData> perversedBlocks = new HashMap<>();
+//
+//        List<UUID> claimUUIDList = new ArrayList<>();for (int x = 0; x < 16; x++) {
+//            for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y < chunk.getWorld().getMaxHeight() - 1; y++) {
+//                for (int z = 0; z < 16; z++) {
+//                    Location claimLocation = chunk.getBlock(x, y, z).getLocation();
+//                    UUID uuid = griefDefenderAPI.getClaimAt(claimLocation).getOwnerUniqueId();
+//
+//                    if (!uuid.equals(emptyUUID)) {
+//                        com.griefdefender.api.claim.Claim claim = griefDefenderAPI.getClaimAt(claimLocation);
+//                        UUID claimUUID = claim.getUniqueId();
+//                        if (!claimUUIDList.contains(claimUUID)) {
+//                            claimUUIDList.add(claimUUID);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        if (claimUUIDList.size() > 0) {
+//            for (int x = 0; x < 16; x++) {
+//                for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y < chunk.getWorld().getMaxHeight() - 1 ; y++) {
+//                    for (int z = 0; z < 16; z++) {
+//                        Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+//                        UUID uuid = griefDefenderAPI.getClaimAt(targetLocation).getOwnerUniqueId();
+//                        if (!uuid.equals(emptyUUID)) {
+//                            try {
+//                                BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+//                                if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+//                                    perversedBlocks.put(targetLocation, block);
+//                                }
+//                            } catch (Exception e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        setBlocksSynchronous(perversedBlocks, tileEntities);
     }
 
     private static void savingMovableStructure(Chunk chunk, ChunkSnapshot oldChunkSnapshot) {

@@ -322,7 +322,7 @@ public class NatureRevivePlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // 關閉時將未來得及處理的旭六重新存入dp
+        // 關閉時將未來得及處理的旭六重新存入database
         if (queue.size() <= 0){
             return;
         }

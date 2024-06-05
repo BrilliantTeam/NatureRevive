@@ -8,13 +8,14 @@
 
 plugins {
     id("java-library")
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("io.github.goooler.shadow") version "8.1.6"
 }
 
 group = "engineer.skyouo.plugins.naturerevive.spigot"
 version = project.rootProject.version
 
 repositories {
+    maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
     maven("https://oss.sonatype.org/content/repositories/snapshots")
     maven("https://oss.sonatype.org/content/repositories/central")
@@ -35,9 +36,15 @@ dependencies {
     compileOnly("net.coreprotect:coreprotect:21.0")
     compileOnly("com.github.TechFortress:GriefPrevention:16.18")
     compileOnly("com.griefdefender:api:2.1.0-SNAPSHOT")
-    compileOnly(files("libs/Residence5.1.3.0.jar"))
+    compileOnly(files("libs/Residence5.1.5.0.jar"))
 
     implementation(project(":naturerevive-common"))
+
+    // FAWE
+
+    implementation(platform("com.intellectualsites.bom:bom-newest:1.45")) // Ref: https://github.com/IntellectualSites/bom
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Core")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit") { isTransitive = false }
 }
 
 tasks {
@@ -57,9 +64,13 @@ tasks {
         })
     }
 
+    java {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+    }
+
     compileJava {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(11)
+        options.release.set(21)
     }
 
     javadoc {

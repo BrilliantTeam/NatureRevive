@@ -32,6 +32,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class NatureRevivePlugin extends JavaPlugin {
     public static boolean enableRevive = true;
@@ -73,12 +74,6 @@ public class NatureRevivePlugin extends JavaPlugin {
 
         nmsWrapper = Util.getNMSWrapper();
 
-        for (Material ore : nmsWrapper.getOreBlocks()) {
-            OreBlocksCompat.addMaterial(ore);
-        }
-
-        suspendedZone = new SuspendedZone();
-
         if (nmsWrapper == null) {
             NatureReviveBukkitLogger.error("&a無法加載 NMS 兼容項目!");
             NatureReviveBukkitLogger.warning("&c您的版本有可能不支援 NatureRevive: " + getServer().getVersion());
@@ -87,6 +82,12 @@ public class NatureRevivePlugin extends JavaPlugin {
             return;
         }
 
+        for (Material ore : nmsWrapper.getOreBlocks()) {
+            OreBlocksCompat.addMaterial(ore);
+        }
+
+        suspendedZone = new SuspendedZone();
+
         if (!checkSoftDependPlugins()) {
             NatureReviveBukkitLogger.error("&c由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
             getPluginLoader().disablePlugin(this);
@@ -94,8 +95,6 @@ public class NatureRevivePlugin extends JavaPlugin {
             return;
         }
 
-        getCommand("snapshot").setExecutor(new SnapshotCommand(this));
-        getCommand("revert").setExecutor(new RevertCommand(this));
         getCommand("forceregenall").setExecutor(new ForceRegenAllCommand(this));
         getCommand("testrandomizeore").setExecutor(new TestRandomizeOreCommand());
         getCommand("reloadreviveconfig").setExecutor(new ReloadCommand());
@@ -163,7 +162,7 @@ public class NatureRevivePlugin extends JavaPlugin {
                         NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
                 }
             }else {
-                // 調味未達成 無法生成區塊 清除序列
+                // 未達成 無法生成區塊 清除序列
                 while (queue.hasNext()){
                     queue.pop();
                 }
@@ -248,6 +247,30 @@ public class NatureRevivePlugin extends JavaPlugin {
     }
 
     public static boolean checkSoftDependPlugins() {
+        try {
+            if (!Objects.equals(readonlyConfig.regenerationEngine, "fawe") &&
+                    !Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
+                NatureReviveBukkitLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
+                return false;
+            }
+
+            Plugin fastAsyncWorldEdit = instance.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit");
+
+            if (fastAsyncWorldEdit == null) {
+                NatureReviveBukkitLogger.warning("&e未發現 FastAsyncWorldEdit, 因此未載入 FastAsyncWorldEdit 插件!");
+
+                if (Objects.equals(readonlyConfig.regenerationEngine, "fawe"))
+                    return false;
+            } else {
+                NatureReviveBukkitLogger.info("&a發現 FastAsyncWorldEdit 支援, 將載入 FastAsyncWorldEdit 支援!");
+            }
+        } catch (Exception e) {
+            NatureReviveBukkitLogger.warning("&e未發現 FastAsyncWorldEdit 領件!");
+
+            if (Objects.equals(readonlyConfig.regenerationEngine, "fawe"))
+                return false;
+        }
+
         try {
             Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
             coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;

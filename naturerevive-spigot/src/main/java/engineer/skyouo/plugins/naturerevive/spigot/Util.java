@@ -2,11 +2,25 @@ package engineer.skyouo.plugins.naturerevive.spigot;
 
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.VersionUtil;
+import org.bukkit.Bukkit;
 
 public class Util {
     private final static String nmsWrapperPrefix = "engineer.skyouo.plugins.naturerevive.spigot.nms.";
 
     public static INMSWrapper getNMSWrapper() {
+        INMSWrapper wrapper = getNMSWrapperInternal();
+
+        if (wrapper == null) {
+            NatureReviveBukkitLogger.warning("由於 NatureRevive 尚未對該 Paper 版本: " + Bukkit.getBukkitVersion() + " 原生支援，");
+            NatureReviveBukkitLogger.warning("將嘗試使用兼容層 NMSHandlerCompat，該模式下，有可能出現錯誤或性能下降。");
+
+            return (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandlerCompat");
+        } else {
+            return wrapper;
+        }
+    }
+
+    public static INMSWrapper getNMSWrapperInternal() {
         int[] versions = VersionUtil.getVersion();
 
         switch (versions[1]) {
@@ -31,7 +45,8 @@ public class Util {
             case 20:
                 return versions[2] == 2 ?
                     (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_2") :
-                    (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_1");
+                    versions[2] < 2 ? (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_1") :
+                    null;
         }
 
         return null;

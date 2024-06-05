@@ -21,7 +21,7 @@ public class ReadonlyConfig {
 
     private YamlFile configuration;
 
-    public final int CONFIG_VERSION = 15;
+    public final int CONFIG_VERSION = 16;
 
     public boolean debug;
 
@@ -79,6 +79,8 @@ public class ReadonlyConfig {
     public String forceRegenFailedDueRegenStopMessage;
 
     public String regenerationStrategy;
+
+    public String regenerationEngine;
 
     public List<String> ignoredWorld;
 
@@ -267,6 +269,17 @@ public class ReadonlyConfig {
                     "When aggressive is chosen, the plugin will load and regenerate expired chunks periodically, this method can regenerate all chunks that is expired, but the performance cost will much higher.",
                     "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
                     "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
+            )));
+
+            configuration.set("regeneration-engine", "bukkit");
+            configuration.setComment("regeneration-engine", convertListStringToString(Arrays.asList(
+                    "變更生成區塊時所指定的引擎，如 bukkit 為原版引擎，生成速度較快，但會導致版本不兼容出現的區塊斷層，",
+                    "fawe 則將調用 FastAsyncWorldEdit 的方式，生成速度較慢，但可保持區塊間地形兼容。",
+                    "使用 FAWE 方法須安裝 FastAsyncWorldEdit。",
+                    "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cost",
+                    "major chunk problem (e.g. terrain break), fawe use FastAsyncWorldEdit implementation,",
+                    "which have slower speed but guarantee terrain, you have to install FastAsyncWorldEdit in order to",
+                    "use fawe method."
             )));
 
             configuration.set("average-chunk-radius", 2);
@@ -557,9 +570,20 @@ public class ReadonlyConfig {
                 configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
                         "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
                         "格式為24小時制，0不可省略 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
-                        "i am a cat weee! :DDD",
-                        "or a dog? woooooof!"
+                        "Limit the time of chunk regenerate (mostly at midnight) to prevent player",
+                        "experiencing from major performance degraded."
 
+                )));
+            case 15: // major update
+                configuration.set("regeneration-engine", "bukkit");
+                configuration.setComment("regeneration-engine", convertListStringToString(Arrays.asList(
+                        "變更生成區塊時所指定的引擎，如 bukkit 為原版引擎，生成速度較快，但會導致版本不兼容出現的區塊斷層，",
+                        "fawe 則將調用 FastAsyncWorldEdit 的方式，生成速度較慢，但可保持區塊間地形兼容。",
+                        "使用 FAWE 方法須安裝 FastAsyncWorldEdit。",
+                        "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cost",
+                        "major chunk problem (e.g. terrain break), fawe use FastAsyncWorldEdit implementation,",
+                        "which have slower speed but guarantee terrain, you have to install FastAsyncWorldEdit in order to",
+                        "use fawe method."
                 )));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
@@ -585,7 +609,7 @@ public class ReadonlyConfig {
         coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
-        queuePerNTick = configuration.getInt("queue-process-per-n-tick", 5);
+        queuePerNTick = configuration.getInt("queue-process-per-n-tick", 200);
         checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
         dataSaveTime = configuration.getInt("data-save-time-tick", 300);
         blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
@@ -593,6 +617,7 @@ public class ReadonlyConfig {
         minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
         maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
         regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
+        regenerationEngine = configuration.getString("regeneration-engine", "bukkit");
         blockProcessingTick = configuration.getInt("block-queue-process-per-n-tick", 10);
         blockProcessingAmountPerProcessing = configuration.getInt("block-queue-process-per-time", 200);
         chunkRegenerateRadiusOnAverageApplied = configuration.getInt("average-chunk-radius", 2);

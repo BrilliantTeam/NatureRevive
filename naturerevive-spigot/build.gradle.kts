@@ -27,7 +27,8 @@ repositories {
 
 dependencies {
     implementation("com.github.Carleslc.Simple-YAML:Simple-Yaml:1.8.4")
-    compileOnly("org.spigotmc:spigot-api:1.17-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
+
 
     compileOnly("com.zaxxer:HikariCP:4.0.3")
 
@@ -80,7 +81,7 @@ tasks {
     processResources {
         filteringCharset = Charsets.UTF_8.name()
         filesMatching("plugin.yml") {
-            expand(rootProject.properties)
+            expand(project.properties)
         }
     }
 }

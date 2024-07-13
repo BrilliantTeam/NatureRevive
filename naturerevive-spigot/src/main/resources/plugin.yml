@@ -2,6 +2,7 @@ name: NatureRevive
 version: '${project.version}'
 main: engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin
 api-version: 1.17
+folia-supported: true
 authors: [NCT_skyouo, twseer67875, the_chosen_cat, Brilliant Server.]
 softdepend: [FastAsyncWorldEdit, Residence, CoreProtect, GriefPrevention, GriefDefender]
 website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
@@ -11,6 +12,10 @@ commands:
     description: "Force regenerate all chunk from local data."
     usage: "/forceregenall"
     permission: naturerevive.forceregenall
+  regenthischunk:
+    description: "Force regenerate the chunk player located at."
+    usage: "/description"
+    permission: naturerevive.description
   testrandomizeore:
     description: "Test perlin noise from randomizeOre function."
     usage: "/testrandomizeore"
@@ -29,8 +34,14 @@ commands:
     description: "Show Debugging purpose messages"
     usage: "/navdebug"
     permission: naturerevive.navdebug
+  navmigrate:
+    description: "Show Debugging purpose messages"
+    usage: "/navmigrate <yaml/sqlite/mysql>"
+    permission: naturerevive.navmigrate
 permissions:
   naturerevive.forceregenall:
+    default: op
+  naturerevive.regenthischunk:
     default: op
   naturerevive.testrandomizeore:
     default: op
@@ -39,4 +50,6 @@ permissions:
   naturerevive.togglerevive:
     default: op
   naturerevive.navdebug:
+    default: op
+  naturerevive.navmigrate:
     default: op

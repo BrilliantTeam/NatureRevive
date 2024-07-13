@@ -1,4 +1,0 @@
-name: nms-1_20_2
-version: '${project.version}'
-main: engineer.skyouo.plugins.nms1_20_2.Nms_1_20_2
-api-version: '1.20'

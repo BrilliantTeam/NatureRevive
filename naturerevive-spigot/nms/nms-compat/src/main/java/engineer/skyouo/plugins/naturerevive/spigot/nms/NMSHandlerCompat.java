@@ -153,10 +153,11 @@ public class NMSHandlerCompat implements INMSWrapper {
     public int getWorldMinHeight(World world) {
         try {
             Class<?> craftWorld = CompatUtil.getClassFromName(CompatUtil.getCraftBukkitClassName("CraftWorld"));
+            Class<?> serverLevel = CompatUtil.getClassFromName("net.minecraft.world.level.LevelReader");
 
             Object cbWorldInst = CompatUtil.invokeFunction(world, craftWorld, "getHandle");
 
-            return (int) CompatUtil.invokeFunction(cbWorldInst, craftWorld, "getMinHeight");
+            return (int) CompatUtil.invokeFunction(cbWorldInst, serverLevel, "getMinBuildHeight");
         } catch (Exception ex) {
             ex.printStackTrace();
             return 0;

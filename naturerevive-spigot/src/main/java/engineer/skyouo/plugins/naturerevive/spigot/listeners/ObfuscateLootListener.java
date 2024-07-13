@@ -4,12 +4,10 @@ import com.google.common.collect.Lists;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
+import engineer.skyouo.plugins.naturerevive.spigot.events.LootChestRegenEvent;
 import it.unimi.dsi.fastutil.objects.ObjectDoubleImmutablePair;
 import it.unimi.dsi.fastutil.objects.ObjectDoublePair;
-import org.bukkit.Chunk;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Chest;
@@ -23,6 +21,7 @@ import org.bukkit.loot.LootContext;
 import org.bukkit.loot.LootTables;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.*;
 
 import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.nmsWrapper;
@@ -66,21 +65,11 @@ public class ObfuscateLootListener implements Listener {
 
                 if (NatureRevivePlugin.readonlyConfig.debug)
                     NatureReviveBukkitLogger.debug("&7Lootable Chest reseeded, seed = " + craftChest.getSeed() + ".");
-            }
 
-            // Old method might replace the loot chest which has been looted.
-            /*if (!Objects.equals(craftChest.getLootTable(), LootTables.EMPTY.getLootTable())) {
-                System.out.println("[DEBUG] Lootable Chest regenerated as " + craftChest.getLootTable());
-                Objects.requireNonNull(craftChest.getLootTable()).fillInventory(craftChest.getBlockInventory(), secureRandom,
-                        new LootContext.Builder(craftChest.getLocation())
-                                .luck(
-                                        ((CraftPlayer) event.getPlayer()).getHandle().getLuck()
-                                )
-                                .killer(
-                                        event.getPlayer()
-                                ).build()
-                );
-            }*/
+                Bukkit.getServer().getPluginManager().callEvent(new LootChestRegenEvent(
+                        event.getPlayer(), event.getClickedBlock().getLocation(), LocalDateTime.now()
+                ));
+            }
         }
     }
 
@@ -94,8 +83,7 @@ public class ObfuscateLootListener implements Listener {
         if (chunk.getWorld().getEnvironment().equals(World.Environment.NETHER)) {
             int surface = findSurface(location);
             if (surface < 140) surface = 140;
-            //System.out.println(chunk.getWorld().getMaxHeight());
-            //System.out.println(findSurface(location));
+
             for (int x = 0; x < 16; x++) {
                 for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()) + 1; y <= surface; y++) {
                     for (int z = 0; z < 16; z++) {

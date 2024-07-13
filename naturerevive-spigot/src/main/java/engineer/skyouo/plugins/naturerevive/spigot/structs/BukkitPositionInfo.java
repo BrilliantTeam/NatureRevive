@@ -100,7 +100,7 @@ public final class BukkitPositionInfo extends PositionInfo implements Configurat
             }
         }
 
-        return griefDefenderAPI != null && claimUUIDList.size() != 0;
+        return griefDefenderAPI != null && !claimUUIDList.isEmpty();
     }
 
     public void regenerateChunk() {

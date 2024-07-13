@@ -1,9 +1,7 @@
 package engineer.skyouo.plugins.naturerevive.spigot;
 
-import com.bekvon.bukkit.residence.api.ResidenceApi;
 import com.bekvon.bukkit.residence.api.ResidenceInterface;
 import com.griefdefender.api.Core;
-import com.griefdefender.api.GriefDefender;
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.structs.Queue;
 import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
@@ -12,27 +10,38 @@ import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.YamlDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.IDependency;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.FAWEIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefDefenderIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefPreventionIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ResidenceIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.CoreProtectIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
+import engineer.skyouo.plugins.naturerevive.spigot.managers.features.ElytraRegeneration;
+import engineer.skyouo.plugins.naturerevive.spigot.stats.Metrics;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.SQLCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import engineer.skyouo.plugins.naturerevive.spigot.util.Util;
 import me.ryanhamshire.GriefPrevention.DataStore;
-import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import net.coreprotect.CoreProtect;
 import net.coreprotect.CoreProtectAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 
 public class NatureRevivePlugin extends JavaPlugin {
     public static boolean enableRevive = true;
@@ -70,12 +79,20 @@ public class NatureRevivePlugin extends JavaPlugin {
             NatureReviveBukkitLogger.error("無法載入配置檔案!");
         }
 
-        databaseConfig = readonlyConfig.determineDatabase();
+        try {
+            databaseConfig = readonlyConfig.determineDatabase();
+        } catch (Exception ex) {
+            NatureReviveBukkitLogger.error("&c資料庫初始化失敗!");
+            NatureReviveBukkitLogger.warning("&c倘若您使用 MySQL，請確認好您以創建對應的 database。");
+
+            getPluginLoader().disablePlugin(this);
+            return;
+        }
 
         nmsWrapper = Util.getNMSWrapper();
 
         if (nmsWrapper == null) {
-            NatureReviveBukkitLogger.error("&a無法加載 NMS 兼容項目!");
+            NatureReviveBukkitLogger.error("&c無法加載 NMS 兼容項目!");
             NatureReviveBukkitLogger.warning("&c您的版本有可能不支援 NatureRevive: " + getServer().getVersion());
 
             getPluginLoader().disablePlugin(this);
@@ -95,18 +112,26 @@ public class NatureRevivePlugin extends JavaPlugin {
             return;
         }
 
-        getCommand("forceregenall").setExecutor(new ForceRegenAllCommand(this));
-        getCommand("testrandomizeore").setExecutor(new TestRandomizeOreCommand());
-        getCommand("reloadreviveconfig").setExecutor(new ReloadCommand());
-        getCommand("togglerevive").setExecutor(new ToggleChunkRegenerationCommand());
-        getCommand("navdebug").setExecutor(new DebugCommand());
+        if (!Util.isPaper()) {
+            NatureReviveBukkitLogger.error("您運行的軟體不包含 NatureRevive 運行所需的修補!");
+            NatureReviveBukkitLogger.error("建議您切換至 Paper，Paper 是 Spigot 的分支之一，包含眾多優化修補，也不須透過 BuildTools 來獲取軟體構建。");
+            getPluginLoader().disablePlugin(this);
+
+            return;
+        }
+
+        registerCommand("forceregenall", new ForceRegenAllCommand(this));
+        registerCommand("regenthischunk", new RegenThisChunkCommand());
+        registerCommand("testrandomizeore", new TestRandomizeOreCommand());
+        registerCommand("reloadreviveconfig", new ReloadCommand());
+        registerCommand("togglerevive", new ToggleChunkRegenerationCommand());
+        registerCommand("navdebug", new DebugCommand());
+        registerCommand("navmigrate", new MigrateCommand());
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
 
-        // todo
-
-        getServer().getScheduler().runTaskTimer(this, () -> {
+        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
                 List<BukkitPositionInfo> positionInfos = databaseConfig.values();
                 for (BukkitPositionInfo positionInfo : positionInfos) {
@@ -138,7 +163,7 @@ public class NatureRevivePlugin extends JavaPlugin {
             }
         }, 20L, readonlyConfig.checkChunkTTLTick);
 
-        getServer().getScheduler().runTaskTimer(this, () -> {
+        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (queue.size() > 0 && isSuitableForChunkRegeneration()) {
                 for (int i = 0; i < readonlyConfig.taskPerProcess && queue.hasNext(); i++) {
                     BukkitPositionInfo task = queue.pop();
@@ -156,12 +181,14 @@ public class NatureRevivePlugin extends JavaPlugin {
                         continue;
                     }
 
-                    task.regenerateChunk();
+                    ScheduleUtil.REGION.runTask(this, task.getLocation(), () -> {
+                        task.regenerateChunk();
 
-                    if (readonlyConfig.debug)
-                        NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
+                        if (readonlyConfig.debug)
+                            NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
+                    });
                 }
-            }else {
+            } else {
                 // 未達成 無法生成區塊 清除序列
                 while (queue.hasNext()){
                     queue.pop();
@@ -169,175 +196,148 @@ public class NatureRevivePlugin extends JavaPlugin {
             }
         }, 20L, readonlyConfig.queuePerNTick);
 
-        getServer().getScheduler().runTaskTimer(this, () -> {
+        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             for (int i = 0; i < readonlyConfig.blockPutPerTick && blockStateWithPosQueue.hasNext(); i++) {
                 BlockStateWithPos blockStateWithPos = blockStateWithPosQueue.pop();
 
                 Location location = blockStateWithPos.getLocation();
 
-                nmsWrapper.setBlockNMS(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getBlockState().getBlockData());
+                ScheduleUtil.REGION.runTask(this, location, () -> {
+                    nmsWrapper.setBlockNMS(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getBlockState().getBlockData());
 
-                if (blockStateWithPos.getTileEntityNbt() != null) {
-                    try {
-                        nmsWrapper.loadTileEntity(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getTileEntityNbt());
-                    } catch (RuntimeException e) {
-                        e.printStackTrace();
+                    if (blockStateWithPos.getTileEntityNbt() != null) {
+                        try {
+                            nmsWrapper.loadTileEntity(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getTileEntityNbt());
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
+                });
             }
         }, 20L, readonlyConfig.blockPutActionPerNTick);
 
-        getServer().getScheduler().runTaskTimer(this, () -> {
+        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (blockDataChangeWithPos.hasNext()) {
                 for (int i = 0; i < 200 && blockDataChangeWithPos.hasNext(); i++) {
                     BlockDataChangeWithPos blockDataChangeWithPosObject = blockDataChangeWithPos.pop();
 
-                    try {
-                        if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REMOVAL) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
-                            coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getOldBlockData().getMaterial(), blockDataChangeWithPosObject.getOldBlockData());
+                    ScheduleUtil.REGION.runTask(this, blockDataChangeWithPosObject.getLocation(), () -> {
+                        synchronized (blockDataChangeWithPosObject) {
+                            try {
+                                if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REMOVAL) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
+                                    coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getOldBlockData().getMaterial(), blockDataChangeWithPosObject.getOldBlockData());
 
-                        if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.PLACEMENT) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
-                            coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getNewBlockData().getMaterial(), blockDataChangeWithPosObject.getNewBlockData());
-                    } catch (IllegalStateException e) {
-                        if (e.getMessage().contains("asynchronous")) {
-                            blockDataChangeWithPosObject.addFailedTime();
-                            if (blockDataChangeWithPosObject.getFailedTime() > (blockDataChangeWithPos.size() > 1 ? 120 : 45)) {
+                                if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.PLACEMENT) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
+                                    coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getNewBlockData().getMaterial(), blockDataChangeWithPosObject.getNewBlockData());
+                            } catch (IllegalStateException e) {
+                                if (e.getMessage().contains("asynchronous")) {
+                                    blockDataChangeWithPosObject.addFailedTime();
+                                    if (blockDataChangeWithPosObject.getFailedTime() > (blockDataChangeWithPos.size() > 1 ? 120 : 45)) {
+                                        blockDataChangeWithPos.add(blockDataChangeWithPosObject);
+                                    }
+                                }
+
                                 e.printStackTrace();
-                                continue;
                             }
-                            blockDataChangeWithPos.add(blockDataChangeWithPosObject);
                         }
-
-                        e.printStackTrace();
-                    }
+                    });
                 }
             }
         }, 20L, 2L);
 
-        if (databaseConfig instanceof SQLDatabaseAdapter) {
-            getServer().getScheduler().runTaskTimer(this, () -> {
-                List<SQLCommand> sqlCommands = new ArrayList<>();
-
-                int i = 0;
-
-                while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
-                    sqlCommands.add(sqlCommandQueue.pop());
-                    i++;
-                }
-
-                ((SQLDatabaseAdapter) databaseConfig).massExecute(sqlCommands);
-            }, 2L, readonlyConfig.sqlProcessingTick);
-        }
-
-        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+        ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
             for (int i = 0; i < readonlyConfig.blockProcessingAmountPerProcessing && blockQueue.hasNext(); i++) {
                 ChunkRelatedEventListener.flagChunk(blockQueue.pop());
             }
         }, 20L, readonlyConfig.blockProcessingTick);
 
         if (databaseConfig instanceof YamlDatabaseAdapter) {
-            getServer().getScheduler().runTaskTimer(this, () -> {
-                try {
-                    databaseConfig.save();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
+                if (databaseConfig instanceof SQLDatabaseAdapter adapter) {
+                    List<SQLCommand> sqlCommands = new ArrayList<>();
+
+                    int i = 0;
+
+                    while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
+                        sqlCommands.add(sqlCommandQueue.pop());
+                        i++;
+                    }
+
+                    adapter.massExecute(sqlCommands);
+                } else {
+                    ScheduleUtil.GLOBAL.runTask(this, () -> {
+                        try {
+                            databaseConfig.save();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
                 }
             }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
         }
+
+        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
+            if (ElytraRegeneration.checkResetLimitTime()) {
+                NatureReviveBukkitLogger.info("The elytra regeneration limit has been reset.");
+            }
+        }, 20L, 600L);
+
+        new Metrics(this, 16446)
+                .addCustomChart(new Metrics.SimplePie("regeneration_engine", new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        return readonlyConfig.regenerationEngine;
+                    }
+                }));
     }
 
     public static boolean checkSoftDependPlugins() {
-        try {
-            if (!Objects.equals(readonlyConfig.regenerationEngine, "fawe") &&
-                    !Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
-                NatureReviveBukkitLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
-                return false;
-            }
-
-            Plugin fastAsyncWorldEdit = instance.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit");
-
-            if (fastAsyncWorldEdit == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 FastAsyncWorldEdit, 因此未載入 FastAsyncWorldEdit 插件!");
-
-                if (Objects.equals(readonlyConfig.regenerationEngine, "fawe"))
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 FastAsyncWorldEdit 支援, 將載入 FastAsyncWorldEdit 支援!");
-            }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 FastAsyncWorldEdit 領件!");
-
-            if (Objects.equals(readonlyConfig.regenerationEngine, "fawe"))
-                return false;
+        if (!Objects.equals(readonlyConfig.regenerationEngine, "fawe") &&
+                !Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
+            NatureReviveBukkitLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
+            return false;
         }
 
-        try {
-            Plugin coreProtectPlugin = instance.getServer().getPluginManager().getPlugin("CoreProtect");
-            coreProtectAPI = coreProtectPlugin != null ? CoreProtect.getInstance().getAPI() : null;
-            if (coreProtectAPI != null && readonlyConfig.coreProtectLogging) {
-                NatureReviveBukkitLogger.info("&a已發現 CoreProtect, 將會啟用 CoreProtect 支援!");
+        List<IDependency> dependencies = List.of(new CoreProtectIntegration(), new ResidenceIntegration(), new GriefDefenderIntegration(),
+                new GriefPreventionIntegration(), new FAWEIntegration());
+
+        for (IDependency dependency : dependencies) {
+            boolean result = false;
+            try {
+                result = dependency.load();
+            } catch (Exception ignored) {
+
             }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&eCoreProtect 插件並未載入, 將禁用 CoreProtect 支援!");
 
-            if (readonlyConfig.coreProtectLogging)
-                return false;
-        }
+            if (result) {
+                NatureReviveBukkitLogger.info(
+                        String.format(
+                                "NatureRevive 成功載入 %s 插件的支援項目。",
+                                dependency.getPluginName()
+                        )
+                );
 
-        try {
-            Plugin residencePlugin = instance.getServer().getPluginManager().getPlugin("Residence");
-            residenceAPI = residencePlugin != null ? ResidenceApi.getResidenceManager() : null;
-            if (residenceAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 Residence, 因此未載入 Residence 領地插件!");
-                if (readonlyConfig.residenceStrictCheck)
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 Residence 領地支援, 將載入 Residence 支援!");
+                if (!dependency.shouldExitOnFatal())
+                    NatureReviveBukkitLogger.info(
+                            String.format(
+                                    "雖然 NatureRevive 發現了 %s 插件，但對應的功能在 NatureRevive 並未被啟用。",
+                                    dependency.getPluginName()
+                            )
+                    );
             }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 Residence 領地插件!");
-            if (readonlyConfig.residenceStrictCheck)
+
+            if (!result && dependency.shouldExitOnFatal()) {
+                NatureReviveBukkitLogger.error(
+                        String.format(
+                                "由於 %s 尚未被載入，且被 NatureRevive 的設置選項依賴，因此無法啟用 NatureRevive。",
+                                dependency.getPluginName()
+                        )
+                );
+
+                NatureReviveBukkitLogger.warning("建議您在設置中關閉相對應的選項，或安裝對應的插件。");
                 return false;
-        }
-
-        try {
-            Plugin GriefPreventionPlugin = instance.getServer().getPluginManager().getPlugin("GriefPrevention");
-            griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
-
-            if (griefPreventionAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 GriefPrevention, 因此未載入 GriefPrevention 領地插件支援!");
-
-                if (readonlyConfig.griefPreventionStrictCheck)
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 GriefPrevention 領地支援, 將載入 GriefPrevention 支援!");
             }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 GriefPrevention 領地插件!");
-
-            if (readonlyConfig.griefPreventionStrictCheck)
-                return false;
         }
-
-        try {
-            Plugin GriefDefenderAPI = instance.getServer().getPluginManager().getPlugin("GriefDefender");
-            griefDefenderAPI = GriefDefenderAPI != null ? GriefDefender.getCore() : null;
-
-            if (griefDefenderAPI == null) {
-                NatureReviveBukkitLogger.warning("&e未發現 GriefDefender, 因此未載入 GriefDefender 領地插件!");
-
-                if (readonlyConfig.griefDefenderStrictCheck)
-                    return false;
-            } else {
-                NatureReviveBukkitLogger.info("&a發現 GriefDefender 領地支援, 將載入 GriefDefender 支援!");
-            }
-        } catch (Exception e) {
-            NatureReviveBukkitLogger.warning("&e未發現 GriefDefender 領地插件!");
-
-            if (readonlyConfig.griefDefenderStrictCheck)
-                return false;
-        }
-
         return true;
     }
 
@@ -348,6 +348,20 @@ public class NatureRevivePlugin extends JavaPlugin {
 
     private boolean isSuitableForChunkRegeneration() {
         // 新增時間閥
-        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && nmsWrapper.getRecentTps()[0] > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.isCurrentTimeAllowForRSC();
+        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && (Util.isFolia() ? Bukkit.getTPS()[0] : nmsWrapper.getRecentTps()[0]) > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.isCurrentTimeAllowForRSC();
+    }
+
+    private boolean registerCommand(String commandName, CommandExecutor executor) {
+        try {
+            getCommand(commandName).setExecutor(executor);
+
+            if (executor instanceof TabExecutor tabExecutor) {
+                getCommand(commandName).setTabCompleter(tabExecutor);
+            }
+
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
     }
 }

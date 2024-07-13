@@ -60,11 +60,15 @@ public class ReadonlyConfig {
 
     public int blockProcessingAmountPerProcessing;
 
-    public int sqlProcessingTick;
-
     public int sqlProcessingCount;
 
     public int chunkRegenerateRadiusOnAverageApplied;
+
+    public int maxElytraPerDay;
+
+    public long regenOffsetDuration;
+
+    public long elytraExceedLimitOffsetDuration;
 
     public String coreProtectUserName;
 
@@ -129,19 +133,19 @@ public class ReadonlyConfig {
                     "How many chunk(s) to regenerate per queue process period.")
             ));
 
-            configuration.set("queue-process-per-n-tick", 5);
+            configuration.set("queue-process-per-n-tick", 200);
             configuration.setComment("queue-process-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 處理一次區塊再生 (1 tick = 50ms)",
                             "Invoking the queue processing function every n tick(s).")
                     ));
 
-            configuration.set("check-chunk-ttl-per-n-tick", 100);
+            configuration.set("check-chunk-ttl-per-n-tick", 200);
             configuration.setComment("check-chunk-ttl-per-n-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 檢查一次過期的區塊 (過期的區塊 = 需要被再生的區塊)",
                             "Checking the expired chunks every n tick(s)")
                     ));
 
-            configuration.set("data-save-time-tick", 300);
+            configuration.set("data-save-time-tick", 3600);
             configuration.setComment("data-save-time-tick",
                     convertListStringToString(Arrays.asList("每 n 個 tick 將過期的區塊儲存至本地資料庫 (過期的區塊 = 需要被再生的區塊)",
                             "Saving the chunks not over TTL to the local file every n tick(s).")
@@ -165,7 +169,7 @@ public class ReadonlyConfig {
                     "Whether to enable the experimental function that if the expired chunk has GriefDefender in it, put all blocks in GriefDefender's claims to new chunk instead of skipping chunk.",
                     "Demo: https://www.youtube.com/watch?v=41RAkj97fJY&list=PLiqb-2W5wSDFvBwnNJCtt_O-kIem40iDG&index=9")));
 
-            configuration.set("coreprotect-logging-enable", true);
+            configuration.set("coreprotect-logging-enable", false);
             configuration.setComment("coreprotect-logging-enable", convertListStringToString(Arrays.asList("是否啟用 CoreProtect 的紀錄功能.",
                     "Whether or not to enable the CoreProtect logging integration.")));
 
@@ -214,6 +218,25 @@ public class ReadonlyConfig {
                     "It should be turned on when the loot chest is filled unexpectedly.")
             ));
 
+            configuration.set("max-elytra-per-day", 10);
+            configuration.setComment("max-elytra-per-day", convertListStringToString(Arrays.asList(
+                    "限制每日重生鞘翅的最大數量，將於本地時間 00:00 重置。",
+                    "This option will set a limit for max elytra regenerated, the limit will be reset on 00:00 A.M. local time.")
+            ));
+
+            configuration.set("regen-offset-max-duration", "0d");
+            configuration.setComment("regen-offset-max-duration", convertListStringToString(Arrays.asList(
+                    "重生時，隨機額外添加重生時長，避免玩家於定期於重生時間搜刮物資，格式同 ttl-duration。",
+                    "This option will add an offset to regen time to prevent player from logging regen time to get elytra or lootable chest,",
+                    "the format is same as the ttl-duration options")
+            ));
+
+            configuration.set("elytra-exceed-limit-offset-duration", "1d");
+            configuration.setComment("elytra-exceed-limit-offset-duration", convertListStringToString(Arrays.asList(
+                    "當鞘翅重生數量超過設定值時，偏移所設置的時間值。",
+                    "This option will set a time offset on elytra regen task, when the elytra regen reach the limit.")
+            ));
+
             configuration.set("suppress-chunk-refresh-radius", 0);
             configuration.setComment("suppress-chunk-refresh-radius", convertListStringToString(Arrays.asList(
                     "每當某區塊發生變更進而重置區塊重生時間時，一同重置周圍 n 個區塊的時間。",
@@ -245,12 +268,12 @@ public class ReadonlyConfig {
                     "重生區塊的最高玩家上限, 倘若玩家數高於該數值, 區塊重生將會被擱置.",
                     "The maximum players count for regenerating expired chunks, if server's players count is greater than this value, the regeneration task will be stopped."
             )));
-            //新增時間閥 英文我好懶(
-            configuration.set("spawn-timer", "0:00-7:00");
+            configuration.set("spawn-timer", "00:00-23:59");
             configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
                     "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
-                    "格式為24小時制 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
-                    "i am a cat weee! :DDD"
+                    "格式為24小時制，0不可省略 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
+                    "Limit the time of chunk regenerate (mostly at midnight) to prevent player",
+                    "experiencing from major performance degraded."
             )));
             configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
             configuration.setComment("blacklist-worlds", convertListStringToString(Arrays.asList(
@@ -258,7 +281,7 @@ public class ReadonlyConfig {
                     "The list of ignored world that will be skipped by regeneration system."
             )));
 
-            configuration.set("regeneration-strategy", "aggressive");
+            configuration.set("regeneration-strategy", "passive");
             configuration.setComment("regeneration-strategy", convertListStringToString(Arrays.asList(
                     "控制區塊的生成策略以及激進程度, 可選 aggressive (激進), passive (緩和), average (均衡)",
                     "當選擇 aggressive 時, 插件將會主動載入重生過期的區塊, 該方法可以有效清空所有過期, 但較為消耗資源.",
@@ -276,7 +299,7 @@ public class ReadonlyConfig {
                     "變更生成區塊時所指定的引擎，如 bukkit 為原版引擎，生成速度較快，但會導致版本不兼容出現的區塊斷層，",
                     "fawe 則將調用 FastAsyncWorldEdit 的方式，生成速度較慢，但可保持區塊間地形兼容。",
                     "使用 FAWE 方法須安裝 FastAsyncWorldEdit。",
-                    "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cost",
+                    "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cause",
                     "major chunk problem (e.g. terrain break), fawe use FastAsyncWorldEdit implementation,",
                     "which have slower speed but guarantee terrain, you have to install FastAsyncWorldEdit in order to",
                     "use fawe method."
@@ -299,13 +322,6 @@ public class ReadonlyConfig {
             configuration.set("block-queue-process-per-time", 200);
             configuration.setComment("block-queue-process-per-time", convertListStringToString(Arrays.asList("每次可以處理幾個被事件影響的方塊.",
                     "How many block(s) to calculate per chunk flagging process period.")
-            ));
-
-            configuration.set("sql-processing-tick", 3);
-            configuration.setComment("sql-processing-tick", convertListStringToString(Arrays.asList("每幾個 tick 可以對資料庫進行增刪查改的動作.",
-                    "請盡量將該數值設置的低一點, 否則資料庫有可能會毀損.",
-                    "How many tick(s) to execute SQL query (like insert, update, delete).",
-                    "Please set it lower than 5 to prevent sql-cache sync error.")
             ));
 
             configuration.set("sql-processing-count", 50);
@@ -528,7 +544,7 @@ public class ReadonlyConfig {
                         "How many queries to execute per execution period.")
                 ));
 
-                configuration.set("coreprotect-logging-enable", true);
+                configuration.set("coreprotect-logging-enable", false);
                 configuration.setComment("coreprotect-logging-enable", convertListStringToString(Arrays.asList("是否啟用 CoreProtect 的紀錄功能.",
                         "Whether or not to enable the CoreProtect logging integration.")));
             case 12:
@@ -549,7 +565,7 @@ public class ReadonlyConfig {
                         "The option to determine the plugin's regeneration management strategy, valid options are 'aggressive', 'passive' and 'average'",
                         "When aggressive is chosen, the plugin will load and regenerate expired chunks periodically, this method can regenerate all chunks that is expired, but the performance cost will much higher.",
                         "When average is chosen, the plugin will check all players' neighboring chunks whether or not is expired, if it is, the neighboring chunks will be queued to be regenerated.",
-                        "When passive is chosen, the plugin will only regenrate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
+                        "When passive is chosen, the plugin will only regenerate chunk on player visited, this method will reduce performance cost but not all the expired chunks will be regenerated."
                 )));
 
                 configuration.set("average-chunk-radius", 2);
@@ -566,7 +582,7 @@ public class ReadonlyConfig {
                         "How many nearby chunks' expiration times should be updates once any chunk is active.")
 
                 ));
-                configuration.set("spawn-timer", "0:00-7:00");
+                configuration.set("spawn-timer", "00:00-23:59");
                 configuration.setComment("spawn-timer", convertListStringToString(Arrays.asList(
                         "限定進行重生區塊的時間, 區塊重生僅會在指定時間內進行生成(通常設定為半夜).",
                         "格式為24小時制，0不可省略 (xx:xx-xx:xx), 預設為凌晨0:00至上午7:00",
@@ -580,11 +596,36 @@ public class ReadonlyConfig {
                         "變更生成區塊時所指定的引擎，如 bukkit 為原版引擎，生成速度較快，但會導致版本不兼容出現的區塊斷層，",
                         "fawe 則將調用 FastAsyncWorldEdit 的方式，生成速度較慢，但可保持區塊間地形兼容。",
                         "使用 FAWE 方法須安裝 FastAsyncWorldEdit。",
-                        "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cost",
+                        "Change the method of regeneration, e.g. bukkit using original method, which is rapid but cause",
                         "major chunk problem (e.g. terrain break), fawe use FastAsyncWorldEdit implementation,",
                         "which have slower speed but guarantee terrain, you have to install FastAsyncWorldEdit in order to",
                         "use fawe method."
                 )));
+
+                configuration.set("max-elytra-per-day", 10);
+                configuration.setComment("max-elytra-per-day", convertListStringToString(Arrays.asList(
+                        "限制每日重生鞘翅的最大數量，將於本地時間 00:00 重置。",
+                        "This option will set a limit for max elytra regenerated, the limit will be reset on 00:00 A.M. local time.")
+                ));
+
+                configuration.set("regen-offset-max-duration", "0d");
+                configuration.setComment("regen-offset-max-duration", convertListStringToString(Arrays.asList(
+                        "重生時，隨機額外添加重生時長，避免玩家於定期於重生時間搜刮物資，格式同 ttl-duration。",
+                        "This option will add an offset to regen time to prevent player from logging regen time to get elytra or lootable chest,",
+                        "the format is same as the ttl-duration options")
+                ));
+
+                configuration.set("elytra-exceed-limit-offset-duration", "1d");
+                configuration.setComment("elytra-exceed-limit-offset-duration", convertListStringToString(Arrays.asList(
+                        "當鞘翅重生數量超過設定值時，偏移所設置的時間值。",
+                        "This option will set a time offset on elytra regen task, when the elytra regen reach the limit.")
+                ));
+
+                configuration.set("regeneration-strategy", "passive");
+                configuration.set("coreprotect-logging-enable", false);
+
+                configuration.remove("sql-processing-tick");
+                configuration.set("sql-processing-count", 500);
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -610,19 +651,22 @@ public class ReadonlyConfig {
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 200);
-        checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 5);
-        dataSaveTime = configuration.getInt("data-save-time-tick", 300);
+        checkChunkTTLTick = configuration.getInt("check-chunk-ttl-per-n-tick", 200);
+        dataSaveTime = configuration.getInt("data-save-time-tick", 3600);
         blockPutPerTick = configuration.getInt("block-put-per-tick", 1024);
         blockPutActionPerNTick = configuration.getInt("block-put-action-per-n-tick", 10);
         minTPSCountForRegeneration = configuration.getDouble("min-tps-for-regenerate-chunk", 16.0);
         maxPlayersCountForRegeneration = configuration.getInt("max-players-for-regenerate-chunk", 40);
-        regenerationStrategy = configuration.getString("regeneration-strategy", "aggressive");
+        regenerationStrategy = configuration.getString("regeneration-strategy", "passive");
         regenerationEngine = configuration.getString("regeneration-engine", "bukkit");
         blockProcessingTick = configuration.getInt("block-queue-process-per-n-tick", 10);
         blockProcessingAmountPerProcessing = configuration.getInt("block-queue-process-per-time", 200);
         chunkRegenerateRadiusOnAverageApplied = configuration.getInt("average-chunk-radius", 2);
+        maxElytraPerDay = configuration.getInt("max-elytra-per-day", 10);
 
         ttlDuration = parseDuration(configuration.getString("ttl-duration", "7d"));
+        regenOffsetDuration = parseDuration(configuration.getString("regen-offset-max-duration", "0d"));
+        elytraExceedLimitOffsetDuration = parseDuration(configuration.getString("elytra-exceed-limit-offset-duration", "1d"));
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
         reloadSuccessMessage = configuration.getString("messages.reload-success-message", "&a成功重載插件配置檔!");
         reloadFailureMessage = configuration.getString("messages.reload-failure-message", "&c插件配置檔重載失敗, 請查看後台以獲取詳細記錄.");
@@ -639,7 +683,9 @@ public class ReadonlyConfig {
         databaseUsername = configuration.getString("storage.database-username", "root");
         databasePassword = configuration.getString("storage.database-password", "20480727");
         jdbcConnectionString = configuration.getString("storage.jdbc-connection-string", "jdbc:mysql://{database_ip}:{database_port}/{database_name}");
-        spawnTimer = configuration.getString("spawn-timer","0:00-7:00");
+        spawnTimer = configuration.getString("spawn-timer","00:00-23:59");
+
+        sqlProcessingCount = configuration.getInt("sql-processing-count", 500);
         if (NatureRevivePlugin.databaseConfig != null) {
             try {
                 NatureRevivePlugin.databaseConfig.save();
@@ -652,7 +698,7 @@ public class ReadonlyConfig {
         }
     }
 
-    private long parseDuration(String duration) {
+    public long parseDuration(String duration) {
         String target =
                 Pattern.compile("\\d+d\\s").matcher(duration).find() ?
                         ("P" + duration.substring(0, duration.indexOf(" ")) + "T" + duration.substring(duration.indexOf(" "))) :

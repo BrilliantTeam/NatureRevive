@@ -1,6 +1,9 @@
 package engineer.skyouo.plugins.naturerevive.spigot.commands;
 
+import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
+import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import org.bukkit.Chunk;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,7 +16,8 @@ public class TestRandomizeOreCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        ObfuscateLootListener.randomizeChunkOre(((Player) sender).getLocation().getChunk());
+        Chunk chunk = ((Player) sender).getLocation().getChunk();
+        ScheduleUtil.REGION.runTask(NatureRevivePlugin.instance, chunk, () -> ObfuscateLootListener.randomizeChunkOre(chunk));
         return true;
     }
 }

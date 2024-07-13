@@ -20,10 +20,12 @@ import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 
+import java.util.Random;
 import java.util.UUID;
 
 public class ChunkRelatedEventListener implements Listener {
     private static UUID emptyUUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+    private static Random random = new Random();
     @EventHandler(priority = EventPriority.MONITOR)
     public void onBlockBreakEvent(BlockBreakEvent event) {
         if (event.isCancelled())
@@ -208,7 +210,11 @@ public class ChunkRelatedEventListener implements Listener {
             }
         }
 
-        BukkitPositionInfo positionInfo = new BukkitPositionInfo(location, System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.ttlDuration);
+        long offset = NatureRevivePlugin.readonlyConfig.regenOffsetDuration > 0 ?
+                random.nextLong(NatureRevivePlugin.readonlyConfig.regenOffsetDuration) :
+                0L;
+
+        BukkitPositionInfo positionInfo = new BukkitPositionInfo(location, System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.ttlDuration + offset);
 
         NatureRevivePlugin.databaseConfig.set(positionInfo);
     }

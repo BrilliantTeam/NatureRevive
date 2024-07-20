@@ -191,6 +191,9 @@ public class ChunkRelatedEventListener implements Listener {
         if (NatureRevivePlugin.readonlyConfig.ignoredWorld.contains(location.getWorld().getName()))
             return;
 
+        if (NatureRevivePlugin.readonlyConfig.ignoredBiomes.contains(location.getBlock().getBiome().getKey().getKey()))
+            return;
+
         if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
             if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
                 return;

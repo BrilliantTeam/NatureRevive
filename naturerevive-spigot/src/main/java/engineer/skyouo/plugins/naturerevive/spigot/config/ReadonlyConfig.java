@@ -28,6 +28,7 @@ public class ReadonlyConfig {
     public boolean residenceStrictCheck;
 
     public boolean griefPreventionStrictCheck;
+
     public boolean griefDefenderStrictCheck;
 
     public boolean saferOreObfuscation;
@@ -35,6 +36,8 @@ public class ReadonlyConfig {
     public boolean coreProtectLogging;
 
     public boolean adaptiveLootChestReplacement;
+
+    public boolean enableOreObfuscation;
 
     public double minTPSCountForRegeneration;
 
@@ -87,6 +90,8 @@ public class ReadonlyConfig {
     public String regenerationEngine;
 
     public List<String> ignoredWorld;
+
+    public List<String> ignoredBiomes;
 
     // MySQL info
 
@@ -202,6 +207,12 @@ public class ReadonlyConfig {
             configuration.set("config-version", CONFIG_VERSION);
             configuration.setComment("config-version", convertListStringToString(Arrays.asList("配置檔案版本，請不要更改此數值！", "Config version, DO NOT CHANGE IT MANUALLY AS IT MIGHT OVERWRITE ENTIRE CONFIGURATION.")));
 
+            configuration.set("enable-ore-obfuscation", false);
+            configuration.setComment("enable-ore-obfuscation", convertListStringToString(Arrays.asList(
+                    "此選項將開啟礦物替換，將礦物的所有位置進行調換，避免玩家得知種子碼後，透過記錄礦物位置訊息以重複獲取礦物之行為。",
+                    "This option enable the ore 'obfuscation' system, once a chunk was regenerated, we will shuffle the ore's location to prevent players from logging ore's location."
+            )));
+
             configuration.set("safer-ore-obfuscation", true);
             configuration.setComment("safer-ore-obfuscation", convertListStringToString(Arrays.asList(
                     "該選項將限制礦物混淆系統強制於高度 40 以下替換礦物 (僅主世界)，並且將會嚴格限制替換的方塊種類為 石頭 / 深板岩 (主世界) 或 地獄石 (地獄)",
@@ -275,10 +286,17 @@ public class ReadonlyConfig {
                     "Limit the time of chunk regenerate (mostly at midnight) to prevent player",
                     "experiencing from major performance degraded."
             )));
+
             configuration.set("blacklist-worlds", Arrays.asList("世界 1", "World 2"));
             configuration.setComment("blacklist-worlds", convertListStringToString(Arrays.asList(
                     "該列表內的世界將會被重生系統忽略, 並將不會再生.",
                     "The list of ignored world that will be skipped by regeneration system."
+            )));
+
+            configuration.set("blacklist-biomes", Arrays.asList("naturerevive"));
+            configuration.setComment("blacklist-biomes", convertListStringToString(Arrays.asList(
+                    "該列表內的生態域將會被重生系統忽略, 並將不會再生.",
+                    "The list of ignored biomes that will be skipped by regeneration system."
             )));
 
             configuration.set("regeneration-strategy", "passive");
@@ -624,6 +642,18 @@ public class ReadonlyConfig {
                 configuration.set("regeneration-strategy", "passive");
                 configuration.set("coreprotect-logging-enable", false);
 
+                configuration.set("enable-ore-obfuscation", false);
+                configuration.setComment("enable-ore-obfuscation", convertListStringToString(Arrays.asList(
+                        "此選項將開啟礦物替換，將礦物的所有位置進行調換，避免玩家得知種子碼後，透過記錄礦物位置訊息以重複獲取礦物之行為。",
+                        "This option enable the ore 'obfuscation' system, once a chunk was regenerated, we will shuffle the ore's location to prevent players from logging ore's location."
+                )));
+
+                configuration.set("blacklist-biomes", Arrays.asList("naturerevive"));
+                configuration.setComment("blacklist-biomes", convertListStringToString(Arrays.asList(
+                        "該列表內的生態域將會被重生系統忽略, 並將不會再生.",
+                        "The list of ignored biomes that will be skipped by regeneration system."
+                )));
+
                 configuration.remove("sql-processing-tick");
                 configuration.set("sql-processing-count", 500);
             default:
@@ -648,6 +678,7 @@ public class ReadonlyConfig {
         adaptiveLootChestReplacement = configuration.getBoolean("adaptive-loot-chest-replacement", false);
         suppressNearbyChunkCount = configuration.getInt("suppress-chunk-refresh-radius", 0);
         coreProtectLogging = configuration.getBoolean("coreprotect-logging-enable", false);
+        enableOreObfuscation = configuration.getBoolean("enable-ore-obfuscation", false);
 
         taskPerProcess = configuration.getInt("task-process-per-tick", 1);
         queuePerNTick = configuration.getInt("queue-process-per-n-tick", 200);
@@ -675,6 +706,7 @@ public class ReadonlyConfig {
         forceRegenFailedDueRegenStopMessage = configuration.getString("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
 
         ignoredWorld = configuration.getStringList("blacklist-worlds");
+        ignoredBiomes = configuration.getStringList("blacklist-biomes");
 
         databaseName = configuration.getString("storage.database-name", "naturerevive");
         databaseTableName = configuration.getString("storage.table-name", "locations");

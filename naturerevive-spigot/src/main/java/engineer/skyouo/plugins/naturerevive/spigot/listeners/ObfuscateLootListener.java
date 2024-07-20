@@ -126,15 +126,20 @@ public class ObfuscateLootListener implements Listener {
 
             //System.out.println(ore);
 
-            BlockData blockData = replaced.getBlockData().clone();
+            // BlockData blockData = replaced.getBlockData().clone();
+
+            BlockData target = chunk.getWorld().getEnvironment().equals(World.Environment.NETHER) ? Material.NETHERRACK.createBlockData() :
+                    ore.getY() >= 0 ?
+                    Material.STONE.createBlockData() :
+                    Material.DEEPSLATE.createBlockData();
 
             NatureRevivePlugin.nmsWrapper.setBlockNMS(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), ore.getBlockData());
-            NatureRevivePlugin.nmsWrapper.setBlockNMS(ore.getWorld(), ore.getX(), ore.getY(), ore.getZ(), blockData);
+            NatureRevivePlugin.nmsWrapper.setBlockNMS(ore.getWorld(), ore.getX(), ore.getY(), ore.getZ(), target);
 
             if (NatureRevivePlugin.readonlyConfig.debug)
                 NatureReviveBukkitLogger.debug(String.format("Swap %d,%d,%d (%s) to %d,%d,%d (%s)",
                         ore.getX(), ore.getY(), ore.getZ(), ore.getType(),
-                        replaced.getX(), replaced.getY(), replaced.getZ(), blockData.getMaterial()
+                        replaced.getX(), replaced.getY(), replaced.getZ(), target.getMaterial()
                 ));
         }
 
@@ -148,19 +153,22 @@ public class ObfuscateLootListener implements Listener {
             if (block.getType().equals(Material.AIR) || block.getType().equals(Material.WATER) || block.getType().equals(Material.LAVA))
                 continue;
 
+            if (block.getType().equals(Material.BEDROCK) || block.getType().equals(Material.END_PORTAL))
+                continue;
+
             if (NatureRevivePlugin.readonlyConfig.saferOreObfuscation && (
                     (
                             chunk.getWorld().getEnvironment().equals(World.Environment.NORMAL) &&
                                     !block.getType().equals(Material.STONE) &&
                                     !block.getType().equals(OreBlocksCompat.getSpecialMaterial("DEEPSLATE"))
                     ) || (
-                            chunk.getWorld().getEnvironment().equals(World.Environment.NORMAL) &&
+                            chunk.getWorld().getEnvironment().equals(World.Environment.NETHER) &&
                                     !block.getType().equals(Material.NETHERRACK)
                     )
             ))
                 continue;
 
-            if (OreBlocksCompat.contains(block.getType())) {
+            if (OreBlocksCompat.contains(block.getType()) && !oreList.contains(block)) {
                 oreList.add(block);
             } else {
                 // double expectation = perlinNoise.noise((chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);

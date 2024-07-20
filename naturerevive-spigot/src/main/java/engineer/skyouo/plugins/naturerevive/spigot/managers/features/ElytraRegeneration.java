@@ -89,45 +89,18 @@ public class ElytraRegeneration {
                 if (integration != null && integration.checkHasLand(chunk1)) {
                     if (NatureRevivePlugin.readonlyConfig.debug)
                         NatureReviveBukkitLogger.debug(String.format("Nearby chunks at (%d, %d) contain lands which claimed by players, abort.",
-                                chunk.getX(), chunk.getZ()));
+                                chunk1.getX(), chunk1.getZ()));
                     return false;
                 } else {
-                    if (Objects.equals(NatureRevivePlugin.readonlyConfig.regenerationEngine, "fawe")) FaweImplRegeneration.regenerate(chunk1, true, null);
-                    else chunk.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
-                    ChunkSnapshot chunkSnapshot1 = chunk1.getChunkSnapshot();
-                    int chest = 0;
-                    List<Location> chests = new ArrayList<>();
-                    for (int x = 0; x < 16; x++) {
-                        for (int z = 0; z < 16; z++) {
-                            for (int y = 0; y < 256; y++) {
-                                Material block1 = chunkSnapshot1.getBlockType(x, y, z);
-                                if (block1 == Material.CHEST) {
-                                    chest++;
-                                    chests.add(getLocationFromBlockType(chunkSnapshot1, x, y, z));
-                                }
-                            }
+                    ScheduleUtil.REGION.runTask(instance, chunk1, () -> {
+                        if (Objects.equals(NatureRevivePlugin.readonlyConfig.regenerationEngine, "fawe"))
+                            FaweImplRegeneration.regenerate(chunk1, true, () -> postOtherChunkCheck(chunk1, blockFace, l));
+                        else {
+                            chunk.getWorld().regenerateChunk(chunk1.getX(), chunk1.getZ());
+                            postOtherChunkCheck(chunk1, blockFace, l);
                         }
-                    }
-                    if (chest != 1) {
-                        continue;
-                    }
+                    });
 
-                    if (!checkChestNearbyLocation(l.get(0), chests.get(0))) {
-                        continue;
-                    }
-
-                    if (elyAmount >= NatureRevivePlugin.readonlyConfig.maxElytraPerDay){
-                        if (NatureRevivePlugin.readonlyConfig.debug)
-                            NatureReviveBukkitLogger.debug(
-                                    String.format("Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.", elyAmount)
-                            );
-                        BukkitPositionInfo positionInfo = new BukkitPositionInfo(chunk1.getBlock(0,0,0).getLocation(), System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.elytraExceedLimitOffsetDuration);
-                        NatureRevivePlugin.databaseConfig.set(positionInfo);
-                        return false;
-                    }
-
-                    regenerateElytraWithFlame(l.get(0), chests.get(0), blockFace);
-                    elyAmount++;
                     return true;
                 }
             }
@@ -158,6 +131,43 @@ public class ElytraRegeneration {
         regenerateElytraWithFlame(l.get(0), l.get(1), directional.getFacing());
         elyAmount++;
         return true;
+    }
+
+    private static void postOtherChunkCheck(Chunk chunk, BlockFace blockFace, List<Location> l) {
+        ChunkSnapshot chunkSnapshot1 = chunk.getChunkSnapshot();
+        int chest = 0;
+        List<Location> chests = new ArrayList<>();
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) {
+                for (int y = 0; y < 256; y++) {
+                    Material block1 = chunkSnapshot1.getBlockType(x, y, z);
+                    if (block1 == Material.CHEST) {
+                        chest++;
+                        chests.add(getLocationFromBlockType(chunkSnapshot1, x, y, z));
+                    }
+                }
+            }
+        }
+        if (chest != 1) {
+            return;
+        }
+
+        if (!checkChestNearbyLocation(l.get(0), chests.get(0))) {
+            return;
+        }
+
+        if (elyAmount >= NatureRevivePlugin.readonlyConfig.maxElytraPerDay){
+            if (NatureRevivePlugin.readonlyConfig.debug)
+                NatureReviveBukkitLogger.debug(
+                        String.format("Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.", elyAmount)
+                );
+            BukkitPositionInfo positionInfo = new BukkitPositionInfo(chunk.getBlock(0,0,0).getLocation(), System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.elytraExceedLimitOffsetDuration);
+            NatureRevivePlugin.databaseConfig.set(positionInfo);
+            return;
+        }
+
+        regenerateElytraWithFlame(l.get(0), chests.get(0), blockFace);
+        elyAmount++;
     }
 
     private static void regenerateElytraWithFlame(Location chest1, Location chest2, BlockFace elytraFace) {

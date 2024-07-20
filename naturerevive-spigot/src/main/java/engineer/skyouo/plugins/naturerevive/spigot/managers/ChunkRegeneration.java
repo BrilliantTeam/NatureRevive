@@ -18,6 +18,7 @@ import engineer.skyouo.plugins.naturerevive.spigot.structs.NbtWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.util.Util;
 import org.bukkit.*;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
@@ -33,17 +34,38 @@ public class ChunkRegeneration {
 
         List<NbtWithPos> nbtWithPos = new ArrayList<>();
 
+        World world = location.getWorld();
+        // Thanks to xuan
+        int centerX = location.getBlockX() >> 4;
+        int centerY = location.getBlockZ() >> 4;
+        int radius = 2;
+        for (int x = -radius; x < (radius + 1); x++) {
+            for (int z = -radius; z < (radius + 1); z++) {
+                world.addPluginChunkTicket(centerX + x, centerY + z, instance);
+            }
+        }
+
         Chunk chunk = location.getChunk();
 
         if (!location.getWorld().isChunkGenerated(chunk.getX(), chunk.getZ())) {
             return;
         }
 
-        if (!chunk.isLoaded()) {
-            chunk.load();
-        }
+        boolean checkBiomes = !readonlyConfig.ignoredBiomes.isEmpty();
+        ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot(checkBiomes, checkBiomes, false);
 
-        ChunkSnapshot oldChunkSnapshot = chunk.getChunkSnapshot();
+        if (checkBiomes) {
+            for (int x = 0; x < 16; x++) {
+               for (int z = 0; z < 16; z++) {
+                   for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()) + 1; y <= oldChunkSnapshot.getHighestBlockYAt(x, z); y++) {
+                        Biome biome = oldChunkSnapshot.getBiome(x, y, z);
+
+                        if (readonlyConfig.ignoredBiomes.contains(biome.getKey().getKey()))
+                            return;
+                   }
+                }
+            }
+        }
 
         // todo: make this asynchronous.
         ILandPluginIntegration integration = IntegrationUtil.pickLandPluginIntegration();
@@ -84,7 +106,15 @@ public class ChunkRegeneration {
     }
 
     private static void regenerateAfterWork(Chunk chunk, ChunkSnapshot oldChunkSnapshot, ILandPluginIntegration integration, List<NbtWithPos> nbtWithPos) {
-        ObfuscateLootListener.randomizeChunkOre(chunk);
+        int radius = 2;
+        for (int x = -radius; x < (radius + 1); x++) {
+            for (int z = -radius; z < (radius + 1); z++) {
+                chunk.getWorld().removePluginChunkTicket(chunk.getX() + x, chunk.getZ() + z, instance);
+            }
+        }
+
+        if (readonlyConfig.enableOreObfuscation)
+            ObfuscateLootListener.randomizeChunkOre(chunk);
 
         ChunkSnapshot newChunkSnapshot = chunk.getChunkSnapshot();
 

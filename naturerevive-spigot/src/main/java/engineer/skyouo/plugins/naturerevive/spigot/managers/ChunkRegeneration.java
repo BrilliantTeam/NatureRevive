@@ -1,12 +1,10 @@
 package engineer.skyouo.plugins.naturerevive.spigot.managers;
 
-import com.bekvon.bukkit.residence.protection.ClaimedResidence;
-import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
-import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.events.ChunkRegenEvent;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.IEngineIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
 import engineer.skyouo.plugins.naturerevive.spigot.managers.features.ElytraRegeneration;
@@ -29,6 +27,8 @@ import java.util.*;
 import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.*;
 
 public class ChunkRegeneration {
+    private static int radius = 8;
+
     public static void regenerateChunk(BukkitPositionInfo bukkitPositionInfo) {
         Location location = bukkitPositionInfo.getLocation();
 
@@ -37,11 +37,10 @@ public class ChunkRegeneration {
         World world = location.getWorld();
         // Thanks to xuan
         int centerX = location.getBlockX() >> 4;
-        int centerY = location.getBlockZ() >> 4;
-        int radius = 2;
+        int centerZ = location.getBlockZ() >> 4;
         for (int x = -radius; x < (radius + 1); x++) {
             for (int z = -radius; z < (radius + 1); z++) {
-                world.addPluginChunkTicket(centerX + x, centerY + z, instance);
+                world.addPluginChunkTicket(centerX + x, centerZ + z, instance);
             }
         }
 
@@ -68,9 +67,11 @@ public class ChunkRegeneration {
         }
 
         // todo: make this asynchronous.
-        ILandPluginIntegration integration = IntegrationUtil.pickLandPluginIntegration();
+        List<ILandPluginIntegration> integrations = IntegrationUtil.getLandIntegrations();
 
-        if (integration != null && integration.checkHasLand(chunk)) {
+        for (ILandPluginIntegration integration : integrations) {
+            if (!integration.checkHasLand(chunk)) continue;
+
             for (BlockState blockState : chunk.getTileEntities()) {
                 if (integration.isInLand(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()))) {
                     String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
@@ -80,6 +81,18 @@ public class ChunkRegeneration {
             }
         }
 
+        IEngineIntegration engine = IntegrationUtil.getRegenEngine();
+
+        try {
+            engine.regenerateChunk(instance, chunk, () -> {
+                regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
+            });
+        } catch (Exception ex) {
+            NatureReviveBukkitLogger.warning(String.format("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。", chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
+            ex.printStackTrace();
+        }
+
+        /*
         if (Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
             try {
                 chunk.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
@@ -87,13 +100,13 @@ public class ChunkRegeneration {
                 NatureReviveBukkitLogger.warning(String.format("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。", chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
                 ex.printStackTrace();
             }
-            regenerateAfterWork(chunk, oldChunkSnapshot, integration, nbtWithPos);
+            regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
         } else {
             ScheduleUtil.GLOBAL.runTaskAsynchronously(instance, () -> {
                 try {
                     FaweImplRegeneration.regenerate(chunk, false, () -> {
                         ScheduleUtil.REGION.runTask(instance, chunk, () -> {
-                            regenerateAfterWork(chunk, oldChunkSnapshot, integration, nbtWithPos);
+                            regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
                         });
                     });
                 } catch (Exception ex) {
@@ -102,11 +115,10 @@ public class ChunkRegeneration {
                 }
             });
         }
-
+         */
     }
 
-    private static void regenerateAfterWork(Chunk chunk, ChunkSnapshot oldChunkSnapshot, ILandPluginIntegration integration, List<NbtWithPos> nbtWithPos) {
-        int radius = 2;
+    private static void regenerateAfterWork(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<ILandPluginIntegration> integrations, List<NbtWithPos> nbtWithPos) {
         for (int x = -radius; x < (radius + 1); x++) {
             for (int z = -radius; z < (radius + 1); z++) {
                 chunk.getWorld().removePluginChunkTicket(chunk.getX() + x, chunk.getZ() + z, instance);
@@ -121,25 +133,25 @@ public class ChunkRegeneration {
         // We can offload it to other thread if not on folia
         if (!Util.isFolia()) {
             ScheduleUtil.GLOBAL.runTaskAsynchronously(instance, () -> {
-                ElytraRegeneration.isEndShip(integration, chunk, newChunkSnapshot);
+                ElytraRegeneration.isEndShip(integrations, chunk, newChunkSnapshot);
 
                 StructureRegeneration.savingMovableStructure(chunk, oldChunkSnapshot);
 
-                if (integration != null)
-                    landOldStateRevert(integration, chunk, oldChunkSnapshot, nbtWithPos);
+                if (!integrations.isEmpty())
+                    landOldStateRevert(integrations, chunk, oldChunkSnapshot, nbtWithPos);
 
-                if (coreProtectAPI != null && readonlyConfig.coreProtectLogging)
+                if (!IntegrationUtil.getLoggingIntegrations().isEmpty())
                     coreProtectAPILogging(chunk, oldChunkSnapshot);
             });
         } else {
-            ElytraRegeneration.isEndShip(integration, chunk, newChunkSnapshot);
+            ElytraRegeneration.isEndShip(integrations, chunk, newChunkSnapshot);
 
             StructureRegeneration.savingMovableStructure(chunk, oldChunkSnapshot);
 
-            if (integration != null)
-                landOldStateRevert(integration, chunk, oldChunkSnapshot, nbtWithPos);
+            if (!integrations.isEmpty())
+                landOldStateRevert(integrations, chunk, oldChunkSnapshot, nbtWithPos);
 
-            if (coreProtectAPI != null && readonlyConfig.coreProtectLogging)
+            if (IntegrationUtil.hasValidLoggingIntegration())
                 coreProtectAPILogging(chunk, oldChunkSnapshot);
         }
 
@@ -158,25 +170,20 @@ public class ChunkRegeneration {
 
                         if (OreBlocksCompat.contains(oldBlockType)) continue;
 
-                        if (!oldBlockType.equals(newBlockType)) {
-                            Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                            BlockData oldBlockData = oldChunkSnapshot.getBlockData(x, y, z);
-                            BlockData newBlockData = newBlock.getBlockData();
-                            if (oldBlockType.equals(Material.AIR)) {
-                                // new block put
-                                //coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
-                                blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.PLACEMENT));
-                            } else {
-                                // Block break
+                        if (oldBlockType.equals(newBlockType)) continue;
 
-                                //coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, location, oldBlockType, oldBlockData);
-                                if (!newBlockType.equals(Material.AIR)) {
-                                    blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.REPLACE));
-                                    //coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
-                                } else {
-                                    blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.REMOVAL));
-                                }
-                            }
+                        Location location = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
+                        BlockData oldBlockData = oldChunkSnapshot.getBlockData(x, y, z);
+                        BlockData newBlockData = newBlock.getBlockData();
+                        if (oldBlockType.equals(Material.AIR)) {
+                            // new block put
+                            //coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, newBlockType, newBlock.getBlockData());
+                            blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData, BlockDataChangeWithPos.Type.PLACEMENT));
+                        } else {
+                            // Block break
+
+                            blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, oldBlockData, newBlockData,
+                                    newBlockType.equals(Material.AIR) ? BlockDataChangeWithPos.Type.REMOVAL : BlockDataChangeWithPos.Type.REPLACE));
                         }
                     }
                 }
@@ -184,44 +191,45 @@ public class ChunkRegeneration {
         }
     }
 
-    private static void landOldStateRevert(ILandPluginIntegration integration, Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
-        Map<Location, BlockData> perversedBlocks = new HashMap<>();
+    private static void landOldStateRevert(List<ILandPluginIntegration> integration, Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<NbtWithPos> tileEntities) {
+        Map<Location, BlockData> preservedBlocks = new HashMap<>();
 
-        if (integration.checkHasLand(chunk)) {
+        if (integration.stream().anyMatch(i -> i.checkHasLand(chunk))) {
             for (int x = 0; x < 16; x++) {
                 for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y <= chunk.getWorld().getMaxHeight(); y++) {
                     for (int z = 0; z < 16; z++) {
                         Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
-                        if (integration.isInLand(targetLocation)) {
-                            BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
-                            if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
-                                perversedBlocks.put(targetLocation, block);
-                            }
+                        if (integration.stream().noneMatch(i -> i.isInLand(targetLocation)))
+                            continue;
+
+                        BlockData block = oldChunkSnapshot.getBlockData(x, y, z);
+                        if (!chunk.getBlock(x, y, z).getBlockData().equals(block)) {
+                            preservedBlocks.put(targetLocation, block);
                         }
                     }
                 }
             }
 
-            setBlocksSynchronous(perversedBlocks, tileEntities);
+            setBlocksSynchronous(preservedBlocks, tileEntities);
         }
     }
 
-    public static void setBlocksSynchronous(Map<Location, BlockData> perversedBlocks, List<NbtWithPos> tileEntities) {
+    public static void setBlocksSynchronous(Map<Location, BlockData> preservedBlocks, List<NbtWithPos> tileEntities) {
         synchronized (blockStateWithPosQueue) {
-            for (Location location : perversedBlocks.keySet()) {
-                boolean findTheNbt = isFindTheNbt(perversedBlocks, tileEntities, location);
+            for (Location location : preservedBlocks.keySet()) {
+                boolean findTheNbt = isFindTheNbt(preservedBlocks, tileEntities, location);
 
                 if (!findTheNbt)
-                    blockStateWithPosQueue.add(new BlockStateWithPos(nmsWrapper.convertBlockDataToBlockState(perversedBlocks.get(location)), location));
+                    blockStateWithPosQueue.add(new BlockStateWithPos(nmsWrapper.convertBlockDataToBlockState(preservedBlocks.get(location)), location));
             }
         }
     }
 
-    private static boolean isFindTheNbt(Map<Location, BlockData> perversedBlocks, List<NbtWithPos> tileEntities, Location location) {
+    private static boolean isFindTheNbt(Map<Location, BlockData> preservedBlocks, List<NbtWithPos> tileEntities, Location location) {
         boolean findTheNbt = false;
         for (NbtWithPos nbtWithPos : tileEntities) {
             if (nbtWithPos.getLocation().equals(location)) {
-                blockStateWithPosQueue.add(new BlockStateWithPos(nmsWrapper.convertBlockDataToBlockState(perversedBlocks.get(location)), location, nbtWithPos.getNbt()));
+                blockStateWithPosQueue.add(new BlockStateWithPos(nmsWrapper.convertBlockDataToBlockState(preservedBlocks.get(location)), location, nbtWithPos.getNbt()));
                 findTheNbt = true;
                 break;
             }

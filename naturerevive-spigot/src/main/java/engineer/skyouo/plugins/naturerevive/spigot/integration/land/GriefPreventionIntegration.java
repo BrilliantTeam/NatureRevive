@@ -1,8 +1,8 @@
 package engineer.skyouo.plugins.naturerevive.spigot.integration.land;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.IDependency;
 import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -10,9 +10,8 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.Collection;
 
-import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.griefPreventionAPI;
-
-public class GriefPreventionIntegration implements ILandPluginIntegration, IDependency {
+public class GriefPreventionIntegration implements ILandPluginIntegration {
+    private static DataStore griefPreventionAPI;
     @Override
     public boolean checkHasLand(Chunk chunk) {
         Collection<Claim> griefPrevention = griefPreventionAPI.getClaims(chunk.getX(), chunk.getZ());
@@ -25,19 +24,34 @@ public class GriefPreventionIntegration implements ILandPluginIntegration, IDepe
     }
 
     @Override
+    public boolean isStrictMode() {
+        return NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck;
+    }
+
+    @Override
     public String getPluginName() {
         return "GriefPrevention";
     }
 
     @Override
+    public Type getType() {
+        return Type.LAND;
+    }
+
+    @Override
     public boolean load() {
         Plugin GriefPreventionPlugin = NatureRevivePlugin.instance.getServer().getPluginManager().getPlugin("GriefPrevention");
-        NatureRevivePlugin.griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+        griefPreventionAPI = GriefPreventionPlugin != null ? GriefPrevention.instance.dataStore : null;
+        return griefPreventionAPI != null;
+    }
+
+    @Override
+    public boolean isEnabled() {
         return griefPreventionAPI != null;
     }
 
     @Override
     public boolean shouldExitOnFatal() {
-        return NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck;
+        return isStrictMode();
     }
 }

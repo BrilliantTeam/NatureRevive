@@ -3,6 +3,7 @@ package engineer.skyouo.plugins.naturerevive.spigot.managers.features;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.events.ElytraPlacementEvent;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.managers.FaweImplRegeneration;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockDataChangeWithPos;
@@ -27,7 +28,7 @@ import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.ins
 public class ElytraRegeneration {
     private static int elyAmount = 0;
 
-    public static boolean isEndShip(ILandPluginIntegration integration, Chunk chunk, ChunkSnapshot snapshot) {
+    public static boolean isEndShip(List<ILandPluginIntegration> integrations, Chunk chunk, ChunkSnapshot snapshot) {
         if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END)) {
             return false;
         }
@@ -86,7 +87,7 @@ public class ElytraRegeneration {
             // 檢查要檢查的區塊是否包含領地
             // todo: Folia edging case - the nearby chunk is in different region
             for (Chunk chunk1 : possibleShipChunks) {
-                if (integration != null && integration.checkHasLand(chunk1)) {
+                if (!integrations.isEmpty() && integrations.stream().anyMatch(i -> i.checkHasLand(chunk1))) {
                     if (NatureRevivePlugin.readonlyConfig.debug)
                         NatureReviveBukkitLogger.debug(String.format("Nearby chunks at (%d, %d) contain lands which claimed by players, abort.",
                                 chunk1.getX(), chunk1.getZ()));
@@ -188,7 +189,7 @@ public class ElytraRegeneration {
             itemFrame.setFacingDirection(elytraFace, true);
             itemFrame.setItem(new ItemStack(Material.ELYTRA));
 
-            if (NatureRevivePlugin.coreProtectAPI != null && NatureRevivePlugin.readonlyConfig.coreProtectLogging)
+            if (IntegrationUtil.hasValidLoggingIntegration())
                 NatureRevivePlugin.blockDataChangeWithPos.add(new BlockDataChangeWithPos(location, block.getBlockData(), location.getBlock().getBlockData(), BlockDataChangeWithPos.Type.REPLACE));
 
             // coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, Material.ITEM_FRAME, location.getBlock().getBlockData());

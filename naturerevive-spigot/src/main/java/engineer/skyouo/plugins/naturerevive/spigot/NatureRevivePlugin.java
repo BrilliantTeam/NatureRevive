@@ -1,21 +1,18 @@
 package engineer.skyouo.plugins.naturerevive.spigot;
 
-import com.bekvon.bukkit.residence.api.ResidenceInterface;
-import com.griefdefender.api.Core;
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.structs.Queue;
+import engineer.skyouo.plugins.naturerevive.spigot.api.IAPIMain;
+import engineer.skyouo.plugins.naturerevive.spigot.api.IIntegrationManager;
 import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
-import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.YamlDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.IDependency;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.FAWEIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefDefenderIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefPreventionIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ResidenceIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.CoreProtectIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationManager;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.ILoggingIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
 import engineer.skyouo.plugins.naturerevive.spigot.managers.features.ElytraRegeneration;
@@ -26,16 +23,17 @@ import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.SQLCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.util.Util;
-import me.ryanhamshire.GriefPrevention.DataStore;
-import net.coreprotect.CoreProtectAPI;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,7 +41,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
-public class NatureRevivePlugin extends JavaPlugin {
+public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
     public static boolean enableRevive = true;
 
     static {
@@ -51,14 +49,10 @@ public class NatureRevivePlugin extends JavaPlugin {
     }
 
     public static NatureRevivePlugin instance;
+    public static IntegrationManager integrationManager;
     public static INMSWrapper nmsWrapper;
     public static ReadonlyConfig readonlyConfig;
     public static DatabaseConfig databaseConfig;
-
-    public static ResidenceInterface residenceAPI;
-    public static CoreProtectAPI coreProtectAPI;
-    public static DataStore griefPreventionAPI;
-    public static Core griefDefenderAPI;
 
     public static SuspendedZone suspendedZone;
 
@@ -104,6 +98,7 @@ public class NatureRevivePlugin extends JavaPlugin {
         }
 
         suspendedZone = new SuspendedZone();
+        integrationManager = new IntegrationManager();
 
         if (!checkSoftDependPlugins()) {
             NatureReviveBukkitLogger.error("&c由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
@@ -112,9 +107,20 @@ public class NatureRevivePlugin extends JavaPlugin {
             return;
         }
 
+        IntegrationUtil.reloadCache();
+
+        if (IntegrationUtil.getRegenEngine() == null) {
+            NatureReviveBukkitLogger.error("找不到可用的重生引擎，請您確定是否正確設置 regenerate-engine 選項!");
+
+            getPluginLoader().disablePlugin(this);
+
+            return;
+        }
+
         if (!Util.isPaper()) {
             NatureReviveBukkitLogger.error("您運行的軟體不包含 NatureRevive 運行所需的修補!");
             NatureReviveBukkitLogger.error("建議您切換至 Paper，Paper 是 Spigot 的分支之一，包含眾多優化修補，也不須透過 BuildTools 來獲取軟體構建。");
+
             getPluginLoader().disablePlugin(this);
 
             return;
@@ -130,6 +136,8 @@ public class NatureRevivePlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);
+
+        // todo: move this to another class
 
         ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
@@ -171,15 +179,11 @@ public class NatureRevivePlugin extends JavaPlugin {
                     if (readonlyConfig.ignoredWorld.contains(task.getLocation().getWorld().getName()))
                         continue;
 
-                    if (BukkitPositionInfo.isResidence(task.getLocation()) && !readonlyConfig.residenceStrictCheck)
-                        continue;
+                    List<ILandPluginIntegration> integrations = IntegrationUtil.getLandIntegrations();
 
-                    if (BukkitPositionInfo.isGriefPrevention(task.getLocation()) && !readonlyConfig.griefPreventionStrictCheck)
+                    if (!integrations.isEmpty() &&
+                            integrations.stream().anyMatch(integration -> integration.isInLand(task.getLocation()) && !integration.isStrictMode()))
                         continue;
-
-                    if (BukkitPositionInfo.isGriefDefender(task.getLocation()) && !readonlyConfig.griefDefenderStrictCheck) {
-                        continue;
-                    }
 
                     ScheduleUtil.REGION.runTask(this, task.getLocation(), () -> {
                         task.regenerateChunk();
@@ -224,11 +228,11 @@ public class NatureRevivePlugin extends JavaPlugin {
                     ScheduleUtil.REGION.runTask(this, blockDataChangeWithPosObject.getLocation(), () -> {
                         synchronized (blockDataChangeWithPosObject) {
                             try {
-                                if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REMOVAL) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
-                                    coreProtectAPI.logRemoval(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getOldBlockData().getMaterial(), blockDataChangeWithPosObject.getOldBlockData());
+                                for (ILoggingIntegration integration : IntegrationUtil.getLoggingIntegrations()) {
+                                    if (!integration.isEnabled()) continue;
 
-                                if (blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.PLACEMENT) || blockDataChangeWithPosObject.getType().equals(BlockDataChangeWithPos.Type.REPLACE))
-                                    coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, blockDataChangeWithPosObject.getLocation(), blockDataChangeWithPosObject.getNewBlockData().getMaterial(), blockDataChangeWithPosObject.getNewBlockData());
+                                    integration.log(blockDataChangeWithPosObject);
+                                }
                             } catch (IllegalStateException e) {
                                 if (e.getMessage().contains("asynchronous")) {
                                     blockDataChangeWithPosObject.addFailedTime();
@@ -251,30 +255,28 @@ public class NatureRevivePlugin extends JavaPlugin {
             }
         }, 20L, readonlyConfig.blockProcessingTick);
 
-        if (databaseConfig instanceof YamlDatabaseAdapter) {
-            ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
-                if (databaseConfig instanceof SQLDatabaseAdapter adapter) {
-                    List<SQLCommand> sqlCommands = new ArrayList<>();
+        ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
+            if (databaseConfig instanceof SQLDatabaseAdapter adapter) {
+                List<SQLCommand> sqlCommands = new ArrayList<>();
 
-                    int i = 0;
+                int i = 0;
 
-                    while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
-                        sqlCommands.add(sqlCommandQueue.pop());
-                        i++;
-                    }
-
-                    adapter.massExecute(sqlCommands);
-                } else {
-                    ScheduleUtil.GLOBAL.runTask(this, () -> {
-                        try {
-                            databaseConfig.save();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
+                while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
+                    sqlCommands.add(sqlCommandQueue.pop());
+                    i++;
                 }
-            }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
-        }
+
+                adapter.massExecute(sqlCommands);
+            } else {
+                ScheduleUtil.GLOBAL.runTask(this, () -> {
+                    try {
+                        databaseConfig.save();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+            }
+        }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
 
         ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (ElytraRegeneration.checkResetLimitTime()) {
@@ -298,47 +300,7 @@ public class NatureRevivePlugin extends JavaPlugin {
             return false;
         }
 
-        List<IDependency> dependencies = List.of(new CoreProtectIntegration(), new ResidenceIntegration(), new GriefDefenderIntegration(),
-                new GriefPreventionIntegration(), new FAWEIntegration());
-
-        for (IDependency dependency : dependencies) {
-            boolean result = false;
-            try {
-                result = dependency.load();
-            } catch (Exception ignored) {
-
-            }
-
-            if (result) {
-                NatureReviveBukkitLogger.info(
-                        String.format(
-                                "NatureRevive 成功載入 %s 插件的支援項目。",
-                                dependency.getPluginName()
-                        )
-                );
-
-                if (!dependency.shouldExitOnFatal())
-                    NatureReviveBukkitLogger.info(
-                            String.format(
-                                    "雖然 NatureRevive 發現了 %s 插件，但對應的功能在 NatureRevive 並未被啟用。",
-                                    dependency.getPluginName()
-                            )
-                    );
-            }
-
-            if (!result && dependency.shouldExitOnFatal()) {
-                NatureReviveBukkitLogger.error(
-                        String.format(
-                                "由於 %s 尚未被載入，且被 NatureRevive 的設置選項依賴，因此無法啟用 NatureRevive。",
-                                dependency.getPluginName()
-                        )
-                );
-
-                NatureReviveBukkitLogger.warning("建議您在設置中關閉相對應的選項，或安裝對應的插件。");
-                return false;
-            }
-        }
-        return true;
+        return integrationManager.init(instance);
     }
 
     @Override
@@ -353,15 +315,25 @@ public class NatureRevivePlugin extends JavaPlugin {
 
     private boolean registerCommand(String commandName, CommandExecutor executor) {
         try {
-            getCommand(commandName).setExecutor(executor);
+            PluginCommand command = getCommand(commandName);
+
+            if (command == null)
+                return false;
+
+            command.setExecutor(executor);
 
             if (executor instanceof TabExecutor tabExecutor) {
-                getCommand(commandName).setTabCompleter(tabExecutor);
+                command.setTabCompleter(tabExecutor);
             }
 
             return true;
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    @Override
+    public @NotNull IIntegrationManager getIntegrationManager() {
+        return integrationManager;
     }
 }

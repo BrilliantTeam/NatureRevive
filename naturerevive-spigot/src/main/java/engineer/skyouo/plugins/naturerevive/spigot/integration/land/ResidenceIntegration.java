@@ -1,6 +1,7 @@
 package engineer.skyouo.plugins.naturerevive.spigot.integration.land;
 
 import com.bekvon.bukkit.residence.api.ResidenceApi;
+import com.bekvon.bukkit.residence.api.ResidenceInterface;
 import com.bekvon.bukkit.residence.protection.ClaimedResidence;
 import com.bekvon.bukkit.residence.protection.ResidenceManager;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
@@ -11,9 +12,8 @@ import org.bukkit.plugin.Plugin;
 
 import java.util.List;
 
-import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.residenceAPI;
-
-public class ResidenceIntegration implements ILandPluginIntegration, IDependency {
+public class ResidenceIntegration implements ILandPluginIntegration {
+    private static ResidenceInterface residenceAPI;
     @Override
     public boolean checkHasLand(Chunk chunk) {
         List<ClaimedResidence> residences = ((ResidenceManager) residenceAPI).getByChunk(chunk);
@@ -26,8 +26,18 @@ public class ResidenceIntegration implements ILandPluginIntegration, IDependency
     }
 
     @Override
+    public boolean isStrictMode() {
+        return NatureRevivePlugin.readonlyConfig.residenceStrictCheck;
+    }
+
+    @Override
     public String getPluginName() {
         return "Residence";
+    }
+
+    @Override
+    public Type getType() {
+        return Type.LAND;
     }
 
     @Override
@@ -38,7 +48,12 @@ public class ResidenceIntegration implements ILandPluginIntegration, IDependency
     }
 
     @Override
+    public boolean isEnabled() {
+        return residenceAPI != null;
+    }
+
+    @Override
     public boolean shouldExitOnFatal() {
-        return NatureRevivePlugin.readonlyConfig.residenceStrictCheck;
+        return isStrictMode();
     }
 }

@@ -2,18 +2,26 @@ package engineer.skyouo.plugins.naturerevive.spigot.integration.engine;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.IDependency;
+import engineer.skyouo.plugins.naturerevive.spigot.managers.FaweImplRegeneration;
+import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import org.bukkit.Chunk;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class FAWEIntegration implements IDependency {
+public class FAWEIntegration implements IEngineIntegration {
     @Override
     public String getPluginName() {
         return "FastAsyncWorldEdit";
+    }
+
+    @Override
+    public Type getType() {
+        return Type.ENGINE;
     }
 
     @Override
@@ -39,7 +47,21 @@ public class FAWEIntegration implements IDependency {
     }
 
     @Override
+    public boolean isEnabled() {
+        return NatureRevivePlugin.readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe");
+    }
+
+    @Override
     public boolean shouldExitOnFatal() {
-        return NatureRevivePlugin.readonlyConfig.regenerationEngine.equals("fawe");
+        return NatureRevivePlugin.readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe");
+    }
+
+    @Override
+    public void regenerateChunk(Plugin plugin, Chunk chunk, Runnable postTask) {
+        ScheduleUtil.GLOBAL.runTaskAsynchronously(plugin, () -> {
+            FaweImplRegeneration.regenerate(chunk, false, () -> {
+                ScheduleUtil.REGION.runTask(plugin, chunk, postTask);
+            });
+        });
     }
 }

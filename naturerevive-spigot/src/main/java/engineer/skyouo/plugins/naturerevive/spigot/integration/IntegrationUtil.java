@@ -1,26 +1,47 @@
 package engineer.skyouo.plugins.naturerevive.spigot.integration;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefDefenderIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefPreventionIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.IEngineIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ResidenceIntegration;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.ILoggingIntegration;
+
+import java.util.List;
 
 public class IntegrationUtil {
-    private static final ResidenceIntegration residenceIntegration = new ResidenceIntegration();
-    private static final GriefPreventionIntegration griefPreventionIntegration = new GriefPreventionIntegration();
-    private static final GriefDefenderIntegration griefDefenderIntegration = new GriefDefenderIntegration();
+    private static List<ILandPluginIntegration> landPluginIntegrations;
+    private static List<ILoggingIntegration> loggingIntegrations;
+    private static IEngineIntegration engineIntegration;
 
-    public static ILandPluginIntegration pickLandPluginIntegration() {
-        if (NatureRevivePlugin.residenceAPI != null && NatureRevivePlugin.readonlyConfig.residenceStrictCheck)
-            return residenceIntegration;
+    public static void reloadCache() {
+        landPluginIntegrations = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.LAND)
+                .stream()
+                .map(dependency -> (ILandPluginIntegration) dependency)
+                .toList();
 
-        if (NatureRevivePlugin.griefPreventionAPI != null && NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck)
-            return griefPreventionIntegration;
+        loggingIntegrations = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.LOGGING)
+                .stream()
+                .map(dependency -> (ILoggingIntegration) dependency)
+                .toList();
 
-        if (NatureRevivePlugin.griefDefenderAPI != null && NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck)
-            return griefDefenderIntegration;
+        engineIntegration = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.ENGINE)
+                .stream()
+                .map(dependency -> (IEngineIntegration) dependency)
+                .findFirst().orElse(null);
+    }
 
-        return null;
+    public static List<ILandPluginIntegration> getLandIntegrations() {
+        return landPluginIntegrations;
+    }
+
+    public static List<ILoggingIntegration> getLoggingIntegrations() {
+        return loggingIntegrations;
+    }
+
+    public static IEngineIntegration getRegenEngine() {
+        return engineIntegration;
+    }
+
+    public static boolean hasValidLoggingIntegration() {
+        return !loggingIntegrations.isEmpty() && loggingIntegrations.stream().anyMatch(IDependency::isEnabled);
     }
 }

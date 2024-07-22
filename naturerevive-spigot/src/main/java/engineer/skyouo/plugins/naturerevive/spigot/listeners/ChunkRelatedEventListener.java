@@ -3,6 +3,8 @@ package engineer.skyouo.plugins.naturerevive.spigot.listeners;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
+import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -194,23 +196,9 @@ public class ChunkRelatedEventListener implements Listener {
         if (NatureRevivePlugin.readonlyConfig.ignoredBiomes.contains(location.getBlock().getBiome().getKey().getKey()))
             return;
 
-        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
+        for (ILandPluginIntegration integration : IntegrationUtil.getLandIntegrations()) {
+            if (integration.isInLand(location) && !integration.isStrictMode())
                 return;
-            }
-        }
-
-        if (NatureRevivePlugin.griefPreventionAPI != null && !NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck){
-            if (NatureRevivePlugin.griefPreventionAPI.getClaimAt(location, true, null) != null){
-                return;
-            }
-        }
-
-        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
-            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            if (!uuid.equals(emptyUUID)){
-                return;
-            }
         }
 
         long offset = NatureRevivePlugin.readonlyConfig.regenOffsetDuration > 0 ?
@@ -223,23 +211,9 @@ public class ChunkRelatedEventListener implements Listener {
     }
 
     private void log(Event event, Location location) {
-        if (NatureRevivePlugin.residenceAPI != null && !NatureRevivePlugin.readonlyConfig.residenceStrictCheck) {
-            if (NatureRevivePlugin.residenceAPI.getByLoc(location) != null) {
+        for (ILandPluginIntegration integration : IntegrationUtil.getLandIntegrations()) {
+            if (integration.isInLand(location) && !integration.isStrictMode())
                 return;
-            }
-        }
-
-        if (NatureRevivePlugin.griefPreventionAPI != null && !NatureRevivePlugin.readonlyConfig.griefPreventionStrictCheck){
-            if (NatureRevivePlugin.griefPreventionAPI.getClaimAt(location, true, null) != null){
-                return;
-            }
-        }
-
-        if (NatureRevivePlugin.griefDefenderAPI != null && !NatureRevivePlugin.readonlyConfig.griefDefenderStrictCheck){
-            UUID uuid = NatureRevivePlugin.griefDefenderAPI.getClaimAt(location).getOwnerUniqueId();
-            if (!uuid.equals(emptyUUID)){
-                return;
-            }
         }
 
         if (NatureRevivePlugin.databaseConfig.get(location) != null)

@@ -30,6 +30,10 @@ public class ChunkRegeneration {
     private static int radius = 8;
 
     public static void regenerateChunk(BukkitPositionInfo bukkitPositionInfo) {
+        regenerateChunk(bukkitPositionInfo, IntegrationUtil.getRegenEngine());
+    }
+
+    public static void regenerateChunk(BukkitPositionInfo bukkitPositionInfo, IEngineIntegration engine) {
         Location location = bukkitPositionInfo.getLocation();
 
         List<NbtWithPos> nbtWithPos = new ArrayList<>();
@@ -80,8 +84,6 @@ public class ChunkRegeneration {
                 }
             }
         }
-
-        IEngineIntegration engine = IntegrationUtil.getRegenEngine();
 
         try {
             engine.regenerateChunk(instance, chunk, () -> {

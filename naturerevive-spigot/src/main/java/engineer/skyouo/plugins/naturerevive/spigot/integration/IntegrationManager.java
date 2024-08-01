@@ -51,8 +51,6 @@ public class IntegrationManager implements IIntegrationManager {
                             "雖然 NatureRevive 發現了 %s 插件，但對應的功能在 NatureRevive 並未被啟用。",
                             dependency.getPluginName()
                     );
-
-                    unregisterIntegration(plugin, dependency);
                 }
             }
 

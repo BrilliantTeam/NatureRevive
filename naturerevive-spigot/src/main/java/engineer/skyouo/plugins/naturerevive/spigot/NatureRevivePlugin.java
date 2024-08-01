@@ -7,38 +7,29 @@ import engineer.skyouo.plugins.naturerevive.spigot.api.IIntegrationManager;
 import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
-import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationManager;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
-import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.ILoggingIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ChunkRelatedEventListener;
 import engineer.skyouo.plugins.naturerevive.spigot.listeners.ObfuscateLootListener;
-import engineer.skyouo.plugins.naturerevive.spigot.managers.features.ElytraRegeneration;
 import engineer.skyouo.plugins.naturerevive.spigot.stats.Metrics;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockStateWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.SQLCommand;
-import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import engineer.skyouo.plugins.naturerevive.spigot.tasks.TaskManager;
 import engineer.skyouo.plugins.naturerevive.spigot.util.Util;
 
-import net.kyori.adventure.text.format.TextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
@@ -50,6 +41,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
 
     public static NatureRevivePlugin instance;
     public static IntegrationManager integrationManager;
+    public static TaskManager taskManager;
     public static INMSWrapper nmsWrapper;
     public static ReadonlyConfig readonlyConfig;
     public static DatabaseConfig databaseConfig;
@@ -139,149 +131,8 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
 
         // todo: move this to another class
 
-        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
-            if (!readonlyConfig.regenerationStrategy.equalsIgnoreCase("passive") && !readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
-                List<BukkitPositionInfo> positionInfos = databaseConfig.values();
-                for (BukkitPositionInfo positionInfo : positionInfos) {
-                    if (positionInfo.isOverTTL()) {
-                        queue.add(positionInfo);
-                        databaseConfig.unset(positionInfo);
-                    }
-                }
-            }
-
-            if (readonlyConfig.regenerationStrategy.equalsIgnoreCase("average")) {
-                for (Player player : getServer().getOnlinePlayers()) {
-                    for (int x = -1; x < readonlyConfig.chunkRegenerateRadiusOnAverageApplied; x++)
-                        for (int z = -1; z < readonlyConfig.chunkRegenerateRadiusOnAverageApplied; z++) {
-                            if (x == z && x == 0)
-                                continue;
-
-                            BukkitPositionInfo positionInfo = databaseConfig.get(new BukkitPositionInfo(player.getWorld().getName(), player.getLocation().getChunk().getX() + x, player.getLocation().getChunk().getZ() + z, 0).getLocation());
-
-                            if (positionInfo == null)
-                                continue;
-
-                            if (positionInfo.isOverTTL()) {
-                                queue.add(positionInfo);
-                                databaseConfig.unset(positionInfo);
-                            }
-                        }
-                }
-            }
-        }, 20L, readonlyConfig.checkChunkTTLTick);
-
-        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
-            if (queue.size() > 0 && isSuitableForChunkRegeneration()) {
-                for (int i = 0; i < readonlyConfig.taskPerProcess && queue.hasNext(); i++) {
-                    BukkitPositionInfo task = queue.pop();
-
-                    if (readonlyConfig.ignoredWorld.contains(task.getLocation().getWorld().getName()))
-                        continue;
-
-                    List<ILandPluginIntegration> integrations = IntegrationUtil.getLandIntegrations();
-
-                    if (!integrations.isEmpty() &&
-                            integrations.stream().anyMatch(integration -> integration.isInLand(task.getLocation()) && !integration.isStrictMode()))
-                        continue;
-
-                    ScheduleUtil.REGION.runTask(this, task.getLocation(), () -> {
-                        task.regenerateChunk();
-
-                        NatureReviveComponentLogger.debug("%s was regenerated.", TextColor.fromHexString("#AAAAAA"), task);
-                    });
-                }
-            } else {
-                // 未達成 無法生成區塊 清除序列
-                while (queue.hasNext()){
-                    queue.pop();
-                }
-            }
-        }, 20L, readonlyConfig.queuePerNTick);
-
-        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
-            for (int i = 0; i < readonlyConfig.blockPutPerTick && blockStateWithPosQueue.hasNext(); i++) {
-                BlockStateWithPos blockStateWithPos = blockStateWithPosQueue.pop();
-
-                Location location = blockStateWithPos.getLocation();
-
-                ScheduleUtil.REGION.runTask(this, location, () -> {
-                    nmsWrapper.setBlockNMS(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getBlockState().getBlockData());
-
-                    if (blockStateWithPos.getTileEntityNbt() != null) {
-                        try {
-                            nmsWrapper.loadTileEntity(location.getWorld(), location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockStateWithPos.getTileEntityNbt());
-                        } catch (RuntimeException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
-            }
-        }, 20L, readonlyConfig.blockPutActionPerNTick);
-
-        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
-            if (blockDataChangeWithPos.hasNext()) {
-                for (int i = 0; i < 200 && blockDataChangeWithPos.hasNext(); i++) {
-                    BlockDataChangeWithPos blockDataChangeWithPosObject = blockDataChangeWithPos.pop();
-
-                    ScheduleUtil.REGION.runTask(this, blockDataChangeWithPosObject.getLocation(), () -> {
-                        synchronized (blockDataChangeWithPosObject) {
-                            try {
-                                for (ILoggingIntegration integration : IntegrationUtil.getLoggingIntegrations()) {
-                                    if (!integration.isEnabled()) continue;
-
-                                    integration.log(blockDataChangeWithPosObject);
-                                }
-                            } catch (IllegalStateException e) {
-                                if (e.getMessage().contains("asynchronous")) {
-                                    blockDataChangeWithPosObject.addFailedTime();
-                                    if (blockDataChangeWithPosObject.getFailedTime() > (blockDataChangeWithPos.size() > 1 ? 120 : 45)) {
-                                        blockDataChangeWithPos.add(blockDataChangeWithPosObject);
-                                    }
-                                }
-
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                }
-            }
-        }, 20L, 2L);
-
-        ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
-            for (int i = 0; i < readonlyConfig.blockProcessingAmountPerProcessing && blockQueue.hasNext(); i++) {
-                ChunkRelatedEventListener.flagChunk(blockQueue.pop());
-            }
-        }, 20L, readonlyConfig.blockProcessingTick);
-
-        ScheduleUtil.GLOBAL.runTaskTimerAsynchronously(this, () -> {
-            if (databaseConfig instanceof SQLDatabaseAdapter adapter) {
-                List<SQLCommand> sqlCommands = new ArrayList<>();
-
-                int i = 0;
-
-                while (sqlCommandQueue.hasNext() && i < readonlyConfig.sqlProcessingCount) {
-                    sqlCommands.add(sqlCommandQueue.pop());
-                    i++;
-                }
-
-                adapter.massExecute(sqlCommands);
-            } else {
-                ScheduleUtil.GLOBAL.runTask(this, () -> {
-                    try {
-                        databaseConfig.save();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-        }, readonlyConfig.dataSaveTime, readonlyConfig.dataSaveTime);
-
-        ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
-            if (ElytraRegeneration.checkResetLimitTime()) {
-                NatureReviveComponentLogger.info("The elytra regeneration limit has been reset.");
-            }
-        }, 20L, 600L);
+        taskManager = new TaskManager();
+        taskManager.init();
 
         new Metrics(this, 16446)
                 .addCustomChart(new Metrics.SimplePie("regeneration_engine", new Callable<String>() {
@@ -305,11 +156,6 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
     @Override
     public void onDisable() {
 
-    }
-
-    private boolean isSuitableForChunkRegeneration() {
-        // 新增時間閥
-        return getServer().getOnlinePlayers().size() < readonlyConfig.maxPlayersCountForRegeneration && (Util.isFolia() ? Bukkit.getTPS()[0] : nmsWrapper.getRecentTps()[0]) > readonlyConfig.minTPSCountForRegeneration && enableRevive && readonlyConfig.isCurrentTimeAllowForRSC();
     }
 
     private boolean registerCommand(String commandName, CommandExecutor executor) {

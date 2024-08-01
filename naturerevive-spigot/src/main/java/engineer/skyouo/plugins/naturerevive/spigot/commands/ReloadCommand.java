@@ -13,6 +13,10 @@ public class ReloadCommand implements CommandExecutor {
         try {
             NatureRevivePlugin.readonlyConfig.reloadConfig();
             NatureRevivePlugin.checkSoftDependPlugins();
+
+            NatureRevivePlugin.taskManager.unregisterTasks();
+            NatureRevivePlugin.taskManager.init();
+
             sender.sendMessage(ChatColor.translateAlternateColorCodes(
                     '&', NatureRevivePlugin.readonlyConfig.reloadSuccessMessage
             ));

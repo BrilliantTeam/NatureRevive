@@ -294,8 +294,8 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
     }
 
     public static boolean checkSoftDependPlugins() {
-        if (!Objects.equals(readonlyConfig.regenerationEngine, "fawe") &&
-                !Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
+        if (!readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe") &&
+                !readonlyConfig.regenerationEngine.equalsIgnoreCase("bukkit")) {
             NatureReviveBukkitLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
             return false;
         }

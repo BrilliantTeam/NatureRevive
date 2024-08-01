@@ -94,7 +94,7 @@ public class ElytraRegeneration {
                     return false;
                 } else {
                     ScheduleUtil.REGION.runTask(instance, chunk1, () -> {
-                        if (Objects.equals(NatureRevivePlugin.readonlyConfig.regenerationEngine, "fawe"))
+                        if (NatureRevivePlugin.readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe"))
                             FaweImplRegeneration.regenerate(chunk1, true, () -> postOtherChunkCheck(chunk1, blockFace, l));
                         else {
                             chunk.getWorld().regenerateChunk(chunk1.getX(), chunk1.getZ());

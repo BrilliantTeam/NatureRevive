@@ -1,12 +1,13 @@
 package engineer.skyouo.plugins.naturerevive.spigot.listeners;
 
 import com.google.common.collect.Lists;
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.events.LootChestRegenEvent;
 import it.unimi.dsi.fastutil.objects.ObjectDoubleImmutablePair;
 import it.unimi.dsi.fastutil.objects.ObjectDoublePair;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -42,8 +43,8 @@ public class ObfuscateLootListener implements Listener {
             }
 
             if (!Objects.equals(craftChest.getLootTable(), LootTables.EMPTY.getLootTable())) {
-                if (NatureRevivePlugin.readonlyConfig.debug)
-                    NatureReviveBukkitLogger.debug("&7Lootable Chest re-seeded as " + craftChest.getLootTable());
+                NatureReviveComponentLogger.debug("Lootable Chest re-seeded as %s.", TextColor.fromHexString("#AAAAAA"),
+                        craftChest.getLootTable());
 
                 craftChest.setSeed(secureRandom.nextLong());
 
@@ -63,8 +64,8 @@ public class ObfuscateLootListener implements Listener {
 
                 ChunkRelatedEventListener.flagChunk(event.getClickedBlock().getLocation());
 
-                if (NatureRevivePlugin.readonlyConfig.debug)
-                    NatureReviveBukkitLogger.debug("&7Lootable Chest reseeded, seed = " + craftChest.getSeed() + ".");
+                NatureReviveComponentLogger.debug("&7Lootable Chest reseeded, seed = %d.",
+                        TextColor.fromHexString("#AAAAAA"), craftChest.getSeed());
 
                 Bukkit.getServer().getPluginManager().callEvent(new LootChestRegenEvent(
                         event.getPlayer(), event.getClickedBlock().getLocation(), LocalDateTime.now()
@@ -74,6 +75,10 @@ public class ObfuscateLootListener implements Listener {
     }
 
     // This method should be called after new chunk generated to obfuscate the chunk.
+    /**
+     * @deprecated - Will refactor into "IRegenOreEngineIntegration" in future version.
+     * @param chunk
+     */
     public static void randomizeChunkOre(Chunk chunk) {
         if (chunk.getWorld().getEnvironment().equals(World.Environment.THE_END)) return; // Does not need since no ore
         Location location = new Location(chunk.getWorld(), chunk.getX() << 4, 256, chunk.getZ() << 4);
@@ -114,8 +119,11 @@ public class ObfuscateLootListener implements Listener {
 
         for (int i = 0; i < oreList.size(); i++) {
             if ((i + 1) > pairList.size()) {
-                if (NatureRevivePlugin.readonlyConfig.debug)
-                    NatureReviveBukkitLogger.debug("&7Cannot fully obfuscate ores at chunk[x=" + chunk.getX() + ", z=" + chunk.getZ() + ", world=" + chunk.getWorld().getName() + "] (ores count: " + oreList.size() + ", replaced count: " + pairList.size() + ")!");
+                NatureReviveComponentLogger.debug(
+                        "&7Cannot fully obfuscate ores at chunk[x = %d, z = %d, world = %s] (ores count: %d, replaced count: %d)!",
+                        TextColor.fromHexString("#AAAAAA"),
+                        chunk.getX(), chunk.getZ(), chunk.getWorld().getName(), oreList.size(), pairList.size()
+                );
                 break;
             }
 
@@ -123,8 +131,6 @@ public class ObfuscateLootListener implements Listener {
 
             Block ore = oreList.get(i);
             Block replaced = chunk.getWorld().getBlockAt(loc);
-
-            //System.out.println(ore);
 
             // BlockData blockData = replaced.getBlockData().clone();
 
@@ -136,11 +142,10 @@ public class ObfuscateLootListener implements Listener {
             NatureRevivePlugin.nmsWrapper.setBlockNMS(loc.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ(), ore.getBlockData());
             NatureRevivePlugin.nmsWrapper.setBlockNMS(ore.getWorld(), ore.getX(), ore.getY(), ore.getZ(), target);
 
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.debug(String.format("Swap %d,%d,%d (%s) to %d,%d,%d (%s)",
-                        ore.getX(), ore.getY(), ore.getZ(), ore.getType(),
-                        replaced.getX(), replaced.getY(), replaced.getZ(), target.getMaterial()
-                ));
+            NatureReviveComponentLogger.debug("Swap %d,%d,%d (%s) to %d,%d,%d (%s)",
+                    TextColor.fromHexString("#AAAAAA"),
+                    ore.getX(), ore.getY(), ore.getZ(), ore.getType(),
+                    replaced.getX(), replaced.getY(), replaced.getZ(), target.getMaterial());
         }
 
         oreList.clear();

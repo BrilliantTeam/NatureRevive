@@ -9,9 +9,10 @@ import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.regions.Region;
 import com.sk89q.worldedit.world.RegenOptions;
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Chunk;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,10 +27,12 @@ public class FaweImplRegeneration {
 
             BlockVector3 one = BlockVector3.at(chunk.getX() << 4, nmsWrapper.getWorldMinHeight(chunk.getWorld()),chunk.getZ() << 4);
             BlockVector3 two = BlockVector3.at((chunk.getX() << 4) +15,256,(chunk.getZ() << 4)+15);
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.info(String.format("Regenerating From (%d, %d, %d) to (%d, %d, %d) in %s",
+
+            NatureReviveComponentLogger.debug("Regenerating From (%d, %d, %d) to (%d, %d, %d) in %s",
+                    TextColor.fromHexString("#AAAAAA"),
                     chunk.getX() << 4, nmsWrapper.getWorldMinHeight(chunk.getWorld()),chunk.getZ() << 4,
-                    (chunk.getX() << 4) +15,256,(chunk.getZ() << 4)+15, bukkitWorld.getName()));
+                    (chunk.getX() << 4) +15,256,(chunk.getZ() << 4)+15, bukkitWorld.getName());
+
             Region region = new CuboidRegion(bukkitWorld, one, two);
 
             boolean success;
@@ -47,8 +50,9 @@ public class FaweImplRegeneration {
             }
 
             Operations.complete(session.commit());
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.info("Regen time cost " + (System.currentTimeMillis() - o) + " ms");
+
+            NatureReviveComponentLogger.debug("Regen time cost %d ms", TextColor.fromHexString("#AAAAAA"),
+                    System.currentTimeMillis() - o);
         }
         if (afterTask != null)
             ScheduleUtil.REGION.runTask(NatureRevivePlugin.instance, chunk, afterTask);

@@ -1,6 +1,6 @@
 package engineer.skyouo.plugins.naturerevive.spigot.managers;
 
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
 import engineer.skyouo.plugins.naturerevive.spigot.events.ChunkRegenEvent;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
@@ -55,13 +55,13 @@ public class ChunkRegeneration {
 
         if (checkBiomes) {
             for (int x = 0; x < 16; x++) {
-               for (int z = 0; z < 16; z++) {
-                   for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()) + 1; y <= oldChunkSnapshot.getHighestBlockYAt(x, z); y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()) + 1; y <= oldChunkSnapshot.getHighestBlockYAt(x, z); y++) {
                         Biome biome = oldChunkSnapshot.getBiome(x, y, z);
 
                         if (readonlyConfig.ignoredBiomes.contains(biome.getKey().getKey()))
                             return;
-                   }
+                    }
                 }
             }
         }
@@ -88,34 +88,10 @@ public class ChunkRegeneration {
                 regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
             });
         } catch (Exception ex) {
-            NatureReviveBukkitLogger.warning(String.format("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。", chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
+            NatureReviveComponentLogger.warning("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。",
+                    chunk.getWorld().getName(), chunk.getX(), chunk.getZ());
             ex.printStackTrace();
         }
-
-        /*
-        if (Objects.equals(readonlyConfig.regenerationEngine, "bukkit")) {
-            try {
-                chunk.getWorld().regenerateChunk(chunk.getX(), chunk.getZ());
-            } catch (Exception ex) {
-                NatureReviveBukkitLogger.warning(String.format("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。", chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
-                ex.printStackTrace();
-            }
-            regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
-        } else {
-            ScheduleUtil.GLOBAL.runTaskAsynchronously(instance, () -> {
-                try {
-                    FaweImplRegeneration.regenerate(chunk, false, () -> {
-                        ScheduleUtil.REGION.runTask(instance, chunk, () -> {
-                            regenerateAfterWork(chunk, oldChunkSnapshot, integrations, nbtWithPos);
-                        });
-                    });
-                } catch (Exception ex) {
-                    NatureReviveBukkitLogger.warning(String.format("NatureRevive 在重生世界 %s 區塊 (%d, %d) 時遇到了問題。", chunk.getWorld().getName(), chunk.getX(), chunk.getZ()));
-                    ex.printStackTrace();
-                }
-            });
-        }
-         */
     }
 
     private static void regenerateAfterWork(Chunk chunk, ChunkSnapshot oldChunkSnapshot, List<ILandPluginIntegration> integrations, List<NbtWithPos> nbtWithPos) {

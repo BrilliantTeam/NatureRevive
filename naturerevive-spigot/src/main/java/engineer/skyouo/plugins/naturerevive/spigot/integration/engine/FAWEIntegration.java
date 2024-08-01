@@ -1,17 +1,14 @@
 package engineer.skyouo.plugins.naturerevive.spigot.integration.engine;
 
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.managers.FaweImplRegeneration;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
 import org.bukkit.Chunk;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 public class FAWEIntegration implements IEngineIntegration {
     @Override
@@ -35,8 +32,8 @@ public class FAWEIntegration implements IEngineIntegration {
                     .toList();
 
             if (num.get(0) > 2 || (num.get(0) == 2 && num.get(1) > 9) || (num.get(0) == 2 && num.get(1) == 9 && num.get(2) > 2)) {
-                NatureReviveBukkitLogger.warning("當前版本的 NatureRevive 暫不兼容 FastAsyncWorldEdit 2.9.2 以上的版本。");
-                NatureReviveBukkitLogger.warning("若想使用 FAWE 重生引擎，建議安裝 FastAsyncWorldEdit 2.9.2 版本。");
+                NatureReviveComponentLogger.warning("當前版本的 NatureRevive 暫不兼容 FastAsyncWorldEdit 2.9.2 以上的版本。");
+                NatureReviveComponentLogger.warning("若想使用 FAWE 重生引擎，建議安裝 FastAsyncWorldEdit 2.9.2 版本。");
                 return false;
             }
 

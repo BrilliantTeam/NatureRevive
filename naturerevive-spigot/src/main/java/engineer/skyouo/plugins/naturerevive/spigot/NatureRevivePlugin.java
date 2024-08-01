@@ -24,6 +24,7 @@ import engineer.skyouo.plugins.naturerevive.spigot.structs.SQLCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.util.Util;
 
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 
 public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
@@ -70,14 +70,14 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
             readonlyConfig = new ReadonlyConfig();
         } catch (IOException e) {
             e.printStackTrace();
-            NatureReviveBukkitLogger.error("無法載入配置檔案!");
+            NatureReviveComponentLogger.error("無法載入配置檔案!");
         }
 
         try {
             databaseConfig = readonlyConfig.determineDatabase();
         } catch (Exception ex) {
-            NatureReviveBukkitLogger.error("&c資料庫初始化失敗!");
-            NatureReviveBukkitLogger.warning("&c倘若您使用 MySQL，請確認好您以創建對應的 database。");
+            NatureReviveComponentLogger.error("&c資料庫初始化失敗!");
+            NatureReviveComponentLogger.warning("&c倘若您使用 MySQL，請確認好您以創建對應的 database。");
 
             getPluginLoader().disablePlugin(this);
             return;
@@ -86,8 +86,8 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
         nmsWrapper = Util.getNMSWrapper();
 
         if (nmsWrapper == null) {
-            NatureReviveBukkitLogger.error("&c無法加載 NMS 兼容項目!");
-            NatureReviveBukkitLogger.warning("&c您的版本有可能不支援 NatureRevive: " + getServer().getVersion());
+            NatureReviveComponentLogger.error("&c無法加載 NMS 兼容項目!");
+            NatureReviveComponentLogger.warning("&c您的版本有可能不支援 NatureRevive: " + getServer().getVersion());
 
             getPluginLoader().disablePlugin(this);
             return;
@@ -101,7 +101,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
         integrationManager = new IntegrationManager();
 
         if (!checkSoftDependPlugins()) {
-            NatureReviveBukkitLogger.error("&c由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
+            NatureReviveComponentLogger.error("&c由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
             getPluginLoader().disablePlugin(this);
 
             return;
@@ -110,7 +110,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
         IntegrationUtil.reloadCache();
 
         if (IntegrationUtil.getRegenEngine() == null) {
-            NatureReviveBukkitLogger.error("找不到可用的重生引擎，請您確定是否正確設置 regenerate-engine 選項!");
+            NatureReviveComponentLogger.error("找不到可用的重生引擎，請您確定是否正確設置 regenerate-engine 選項!");
 
             getPluginLoader().disablePlugin(this);
 
@@ -118,8 +118,8 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
         }
 
         if (!Util.isPaper()) {
-            NatureReviveBukkitLogger.error("您運行的軟體不包含 NatureRevive 運行所需的修補!");
-            NatureReviveBukkitLogger.error("建議您切換至 Paper，Paper 是 Spigot 的分支之一，包含眾多優化修補，也不須透過 BuildTools 來獲取軟體構建。");
+            NatureReviveComponentLogger.error("您運行的軟體不包含 NatureRevive 運行所需的修補!");
+            NatureReviveComponentLogger.error("建議您切換至 Paper，Paper 是 Spigot 的分支之一，包含眾多優化修補，也不須透過 BuildTools 來獲取軟體構建。");
 
             getPluginLoader().disablePlugin(this);
 
@@ -188,8 +188,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
                     ScheduleUtil.REGION.runTask(this, task.getLocation(), () -> {
                         task.regenerateChunk();
 
-                        if (readonlyConfig.debug)
-                            NatureReviveBukkitLogger.debug("&7" + task + " was regenerated.");
+                        NatureReviveComponentLogger.debug("%s was regenerated.", TextColor.fromHexString("#AAAAAA"), task);
                     });
                 }
             } else {
@@ -280,7 +279,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
 
         ScheduleUtil.GLOBAL.runTaskTimer(this, () -> {
             if (ElytraRegeneration.checkResetLimitTime()) {
-                NatureReviveBukkitLogger.info("The elytra regeneration limit has been reset.");
+                NatureReviveComponentLogger.info("The elytra regeneration limit has been reset.");
             }
         }, 20L, 600L);
 
@@ -296,7 +295,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
     public static boolean checkSoftDependPlugins() {
         if (!readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe") &&
                 !readonlyConfig.regenerationEngine.equalsIgnoreCase("bukkit")) {
-            NatureReviveBukkitLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
+            NatureReviveComponentLogger.warning("請將 regeneration-strategy 修正為 bukkit 或 fawe.");
             return false;
         }
 

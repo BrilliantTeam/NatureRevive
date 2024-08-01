@@ -1,11 +1,12 @@
 package engineer.skyouo.plugins.naturerevive.spigot.listeners;
 
 
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ILandPluginIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -219,8 +220,8 @@ public class ChunkRelatedEventListener implements Listener {
         if (NatureRevivePlugin.databaseConfig.get(location) != null)
             return;
 
-        if (NatureRevivePlugin.readonlyConfig.debug)
-            NatureReviveBukkitLogger.info(new BukkitPositionInfo(location, 0).toString() + " was flagged by event " + event.getEventName());
+        NatureReviveComponentLogger.debug("%s was flagged by event %s", TextColor.fromHexString("#AAAAAA"),
+                new BukkitPositionInfo(location, 0), event.getEventName());
     }
 }
 

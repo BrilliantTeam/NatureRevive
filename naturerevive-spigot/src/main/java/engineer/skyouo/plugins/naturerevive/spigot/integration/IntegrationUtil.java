@@ -16,16 +16,19 @@ public class IntegrationUtil {
         landPluginIntegrations = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.LAND)
                 .stream()
                 .map(dependency -> (ILandPluginIntegration) dependency)
+                .filter(IDependency::isEnabled)
                 .toList();
 
         loggingIntegrations = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.LOGGING)
                 .stream()
                 .map(dependency -> (ILoggingIntegration) dependency)
+                .filter(IDependency::isEnabled)
                 .toList();
 
         engineIntegration = NatureRevivePlugin.integrationManager.getAvailableDependencies(IDependency.Type.ENGINE)
                 .stream()
                 .map(dependency -> (IEngineIntegration) dependency)
+                .filter(IDependency::isEnabled)
                 .findFirst().orElse(null);
     }
 

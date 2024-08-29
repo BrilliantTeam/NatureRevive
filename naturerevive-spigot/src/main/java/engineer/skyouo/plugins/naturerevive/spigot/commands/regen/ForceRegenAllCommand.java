@@ -1,20 +1,21 @@
-package engineer.skyouo.plugins.naturerevive.spigot.commands;
+package engineer.skyouo.plugins.naturerevive.spigot.commands.regen;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.SubCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ForceRegenAllCommand implements CommandExecutor {
-    private Plugin plugin;
+public class ForceRegenAllCommand implements SubCommand {
+    public ForceRegenAllCommand() {
 
-    public ForceRegenAllCommand(Plugin plugin) {
-        this.plugin = plugin;
     }
 
     @Override
@@ -36,5 +37,20 @@ public class ForceRegenAllCommand implements CommandExecutor {
         }
 
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return "forceregenall";
+    }
+
+    @Override
+    public boolean hasPermissionToExecute(CommandSender sender) {
+        return sender.hasPermission("naturerevive.forceregenall");
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        return List.of();
     }
 }

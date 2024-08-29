@@ -1,6 +1,6 @@
 package engineer.skyouo.plugins.naturerevive.spigot.integration;
 
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.api.IIntegrationManager;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.DefaultEngineIntegration;
@@ -9,6 +9,7 @@ import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefDefende
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.GriefPreventionIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.land.ResidenceIntegration;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.logging.CoreProtectIntegration;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,39 +41,31 @@ public class IntegrationManager implements IIntegrationManager {
             }
 
             if (result) {
-                NatureReviveBukkitLogger.info(
-                        String.format(
-                                "NatureRevive 成功載入 %s 插件的支援項目。",
-                                dependency.getPluginName()
-                        )
+                NatureReviveComponentLogger.info(
+                        "NatureRevive 成功載入 %s 插件的支援項目。",
+                        dependency.getPluginName()
                 );
 
                 if (!dependency.getType().equals(IDependency.Type.LAND) && !dependency.isEnabled()) {
-                    NatureReviveBukkitLogger.info(
-                            String.format(
-                                    "雖然 NatureRevive 發現了 %s 插件，但對應的功能在 NatureRevive 並未被啟用。",
-                                    dependency.getPluginName()
-                            )
+                    NatureReviveComponentLogger.info(
+                            "雖然 NatureRevive 發現了 %s 插件，但對應的功能在 NatureRevive 並未被啟用。",
+                            dependency.getPluginName()
                     );
-
-                    unregisterIntegration(plugin, dependency);
                 }
             }
 
             if (!result && dependency.shouldExitOnFatal()) {
-                NatureReviveBukkitLogger.error(
-                        String.format(
-                                "由於 %s 尚未被載入，且被 NatureRevive 的設置選項依賴，因此無法啟用 NatureRevive。",
-                                dependency.getPluginName()
-                        )
+                NatureReviveComponentLogger.error(
+                        "由於 %s 尚未被載入，且被 NatureRevive 的設置選項依賴，因此無法啟用 NatureRevive。",
+                        dependency.getPluginName()
                 );
 
-                NatureReviveBukkitLogger.warning("建議您在設置中關閉相對應的選項，或安裝對應的插件。");
+                NatureReviveComponentLogger.warning("建議您在設置中關閉相對應的選項，或安裝對應的插件。");
                 return false;
             }
         }
 
-        builtinDependencies.clear();
+        // builtinDependencies.clear();
         return true;
     }
 
@@ -113,13 +106,13 @@ public class IntegrationManager implements IIntegrationManager {
         if (dependencies.contains(dependency))
             return false;
 
-        NatureReviveBukkitLogger.debug(
-                String.format("Plugin %s tried to register integration of %s.", plugin.getName(), dependency.getPluginName())
+        NatureReviveComponentLogger.debug(
+                "Plugin %s tried to register integration of %s.", TextColor.fromHexString("#AAAAAA"), plugin.getName(), dependency.getPluginName()
         );
 
         if (!dependency.load()) {
-            NatureReviveBukkitLogger.debug(
-                    String.format("Plugin %s failed to register integration of %s.", plugin.getName(), dependency.getPluginName())
+            NatureReviveComponentLogger.debug(
+                    "Plugin %s failed to register integration of %s.", TextColor.fromHexString("#AAAAAA"), plugin.getName(), dependency.getPluginName()
             );
 
             return false;
@@ -133,11 +126,14 @@ public class IntegrationManager implements IIntegrationManager {
         if (!dependencies.contains(dependency))
             return false;
 
-        if (NatureRevivePlugin.readonlyConfig.debug)
-            NatureReviveBukkitLogger.debug(
-                    String.format("Plugin %s tried to unregister integration of %s.", plugin.getName(), dependency.getPluginName())
-            );
+        NatureReviveComponentLogger.debug(
+                "Plugin %s tried to unregister integration of %s.", TextColor.fromHexString("#AAAAAA"), plugin.getName(), dependency.getPluginName()
+        );
 
         return dependencies.remove(dependency);
+    }
+
+    public void clearDependency() {
+        dependencies.clear();
     }
 }

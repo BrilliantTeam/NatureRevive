@@ -1,6 +1,7 @@
-package engineer.skyouo.plugins.naturerevive.spigot.commands;
+package engineer.skyouo.plugins.naturerevive.spigot.commands.utility;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.SubCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.MySQLDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.SQLDatabaseAdapter;
@@ -11,7 +12,6 @@ import engineer.skyouo.plugins.naturerevive.spigot.structs.SQLCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +22,7 @@ import java.util.List;
 
 import static engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin.*;
 
-public class MigrateCommand implements TabExecutor {
+public class MigrateCommand implements SubCommand {
 
     @Override
     public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String[] strings) {
@@ -111,5 +111,15 @@ public class MigrateCommand implements TabExecutor {
             case "mysql" -> new MySQLDatabaseAdapter();
             default -> new YamlDatabaseAdapter();
         };
+    }
+
+    @Override
+    public String getName() {
+        return "migrate";
+    }
+
+    @Override
+    public boolean hasPermissionToExecute(CommandSender sender) {
+        return sender.hasPermission("naturerevive.navmigrate");
     }
 }

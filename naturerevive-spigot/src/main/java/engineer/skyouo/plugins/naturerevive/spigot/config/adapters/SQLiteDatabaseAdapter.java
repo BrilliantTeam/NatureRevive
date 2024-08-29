@@ -18,7 +18,7 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
     public SQLiteDatabaseAdapter() {
         new File("plugins/NatureRevive").mkdirs();
 
-        File databaseFile = new File(NatureRevivePlugin.instance.getDataFolder(), "database.db");
+        File databaseFile = new File(NatureRevivePlugin.instance.getDataFolder(), String.format("%s.db", NatureRevivePlugin.readonlyConfig.databaseName));
 
         if (!databaseFile.exists()) {
             try {
@@ -35,7 +35,7 @@ public class SQLiteDatabaseAdapter implements DatabaseConfig, SQLDatabaseAdapter
             connection = DriverManager.getConnection(url);
 
             connection.createStatement()
-                    .execute("CREATE TABLE IF NOT EXISTS locations (X INTEGER NOT NULL, Z INTEGER NOT NULL, TTL INTEGER, WORLDNAME VARCHAR(255) NOT NULL, PRIMARY KEY (X, Z, WORLDNAME));");
+                    .execute(String.format("CREATE TABLE IF NOT EXISTS %s (X INTEGER NOT NULL, Z INTEGER NOT NULL, TTL INTEGER, WORLDNAME VARCHAR(255) NOT NULL, PRIMARY KEY (X, Z, WORLDNAME));", NatureRevivePlugin.readonlyConfig.databaseTableName));
 
             for (BukkitPositionInfo positionInfo : values()) { // Build up cache
                 cache.put(positionInfo.getLocation(), positionInfo);

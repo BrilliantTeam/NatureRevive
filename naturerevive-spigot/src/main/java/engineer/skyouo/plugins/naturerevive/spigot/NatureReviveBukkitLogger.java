@@ -3,7 +3,11 @@ package engineer.skyouo.plugins.naturerevive.spigot;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 
-@Deprecated(forRemoval = true)
+/**
+ * @deprecated - Due to the future cross-platform compatibility,
+ * this class has been deprecated, see {@link NatureReviveComponentLogger} for better logging system implementation.
+ * */
+@Deprecated(forRemoval = true, since = "2.1.0")
 public class NatureReviveBukkitLogger {
     public static void ok(String message) {
         Bukkit.getConsoleSender()

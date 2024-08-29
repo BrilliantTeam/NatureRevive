@@ -1,12 +1,17 @@
-package engineer.skyouo.plugins.naturerevive.spigot.commands;
+package engineer.skyouo.plugins.naturerevive.spigot.commands.regen;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.SubCommand;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class ToggleChunkRegenerationCommand  implements CommandExecutor {
+import java.util.List;
+
+public class ToggleChunkRegenerationCommand implements SubCommand {
     public ToggleChunkRegenerationCommand() {
 
     }
@@ -25,5 +30,20 @@ public class ToggleChunkRegenerationCommand  implements CommandExecutor {
                 )
         );
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return NatureRevivePlugin.enableRevive ? "pause" : "resume";
+    }
+
+    @Override
+    public boolean hasPermissionToExecute(CommandSender sender) {
+        return sender.hasPermission("naturerevive.togglerevive");
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        return List.of();
     }
 }

@@ -2,7 +2,7 @@ package engineer.skyouo.plugins.naturerevive.spigot.util;
 
 import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.VersionUtil;
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import org.bukkit.Bukkit;
 
 public class Util {
@@ -12,8 +12,8 @@ public class Util {
         INMSWrapper wrapper = getNMSWrapperInternal();
 
         if (wrapper == null) {
-            NatureReviveBukkitLogger.warning("由於 NatureRevive 尚未對該 Paper 版本: " + Bukkit.getBukkitVersion() + " 原生支援，");
-            NatureReviveBukkitLogger.warning("將嘗試使用兼容層 NMSHandlerCompat，該模式下，有可能出現錯誤或性能下降。");
+            NatureReviveComponentLogger.warning("由於 NatureRevive 尚未對該 Paper 版本: %s 原生支援，", Bukkit.getBukkitVersion());
+            NatureReviveComponentLogger.warning("將嘗試使用兼容層 NMSHandlerCompat，該模式下，有可能出現錯誤或性能下降。");
 
             return (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandlerCompat");
         } else {
@@ -49,6 +49,8 @@ public class Util {
                     versions[2] < 2 ? (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_1") :
                     versions[2] < 5 ? (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_4") :
                             (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_6");
+            case 21:
+                return (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_21");
         }
 
         return null;

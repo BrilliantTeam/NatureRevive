@@ -1,6 +1,6 @@
 package engineer.skyouo.plugins.naturerevive.spigot.managers.features;
 
-import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveBukkitLogger;
+import engineer.skyouo.plugins.naturerevive.spigot.NatureReviveComponentLogger;
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
 import engineer.skyouo.plugins.naturerevive.spigot.events.ElytraPlacementEvent;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
@@ -9,6 +9,7 @@ import engineer.skyouo.plugins.naturerevive.spigot.managers.FaweImplRegeneration
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BlockDataChangeWithPos;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import engineer.skyouo.plugins.naturerevive.spigot.util.ScheduleUtil;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
@@ -67,9 +68,9 @@ public class ElytraRegeneration {
         if (c == 1) {
             World world = chunk.getWorld();
 
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.debug(String.format("Possibilities of chunk (%d, %d) is end ship is detected, NatureRevive will perform checking.",
-                        chunk.getX(), chunk.getZ()));
+            NatureReviveComponentLogger.debug("Possibilities of chunk (%d, %d) is end ship is detected, NatureRevive will perform checking.",
+                    TextColor.fromHexString("#AAAAAA"),
+                    chunk.getX(), chunk.getZ());
 
             Directional directional = (Directional) l.get(0).getBlock().getBlockData();
             BlockFace blockFace = directional.getFacing();
@@ -88,13 +89,14 @@ public class ElytraRegeneration {
             // todo: Folia edging case - the nearby chunk is in different region
             for (Chunk chunk1 : possibleShipChunks) {
                 if (!integrations.isEmpty() && integrations.stream().anyMatch(i -> i.checkHasLand(chunk1))) {
-                    if (NatureRevivePlugin.readonlyConfig.debug)
-                        NatureReviveBukkitLogger.debug(String.format("Nearby chunks at (%d, %d) contain lands which claimed by players, abort.",
-                                chunk1.getX(), chunk1.getZ()));
+                    NatureReviveComponentLogger.debug("Nearby chunks at (%d, %d) contain lands which claimed by players, abort.",
+                            TextColor.fromHexString("#AAAAAA"),
+                            chunk1.getX(), chunk1.getZ());
+
                     return false;
                 } else {
                     ScheduleUtil.REGION.runTask(instance, chunk1, () -> {
-                        if (Objects.equals(NatureRevivePlugin.readonlyConfig.regenerationEngine, "fawe"))
+                        if (NatureRevivePlugin.readonlyConfig.regenerationEngine.equalsIgnoreCase("fawe"))
                             FaweImplRegeneration.regenerate(chunk1, true, () -> postOtherChunkCheck(chunk1, blockFace, l));
                         else {
                             chunk.getWorld().regenerateChunk(chunk1.getX(), chunk1.getZ());
@@ -119,10 +121,10 @@ public class ElytraRegeneration {
 
         // 放置鞘翅 (sync)
         if (elyAmount >= NatureRevivePlugin.readonlyConfig.maxElytraPerDay){
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.debug(
-                        String.format("Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.", elyAmount)
-                );
+            NatureReviveComponentLogger.debug(
+                    "Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.",
+                    TextColor.fromHexString("#AAAAAA"), elyAmount
+            );
             BukkitPositionInfo positionInfo = new BukkitPositionInfo(chunk.getBlock(0,0,0).getLocation(), System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.elytraExceedLimitOffsetDuration);
             NatureRevivePlugin.databaseConfig.set(positionInfo);
             return false;
@@ -158,10 +160,10 @@ public class ElytraRegeneration {
         }
 
         if (elyAmount >= NatureRevivePlugin.readonlyConfig.maxElytraPerDay){
-            if (NatureRevivePlugin.readonlyConfig.debug)
-                NatureReviveBukkitLogger.debug(
-                        String.format("Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.", elyAmount)
-                );
+            NatureReviveComponentLogger.debug(
+                    "Exceed the elytra regenerated limit (%d), will not regen any elytra until tomorrow.",
+                    TextColor.fromHexString("#AAAAAA"), elyAmount
+            );
             BukkitPositionInfo positionInfo = new BukkitPositionInfo(chunk.getBlock(0,0,0).getLocation(), System.currentTimeMillis() + NatureRevivePlugin.readonlyConfig.elytraExceedLimitOffsetDuration);
             NatureRevivePlugin.databaseConfig.set(positionInfo);
             return;
@@ -194,7 +196,9 @@ public class ElytraRegeneration {
 
             // coreProtectAPI.logPlacement(readonlyConfig.coreProtectUserName, location, Material.ITEM_FRAME, location.getBlock().getBlockData());
 
-            NatureReviveBukkitLogger.info(String.format("Regenerated elytra located at %s / %f %f %f.", location.getWorld().getName(), location.getX(), location.getY(), location.getZ()));
+            NatureReviveComponentLogger.debug("Regenerated elytra located at [world = %s, x = %f, y = %f, z = %f].",
+                    TextColor.fromHexString("#AAAAAA"),
+                    location.getWorld().getName(), location.getX(), location.getY(), location.getZ());
 
             Bukkit.getServer().getPluginManager().callEvent(new ElytraPlacementEvent(location, LocalDateTime.now()));
         });

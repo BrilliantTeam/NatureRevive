@@ -8,36 +8,11 @@ softdepend: [FastAsyncWorldEdit, Residence, CoreProtect, GriefPrevention, GriefD
 website: https://www.brilliantw.net/%E9%96%8B%E6%BA%90%E8%BB%9F%E9%AB%94/
 libraries: [org.xerial:sqlite-jdbc:3.39.3.0, mysql:mysql-connector-java:8.0.30, com.zaxxer:HikariCP:5.0.1]
 commands:
-  forceregenall:
-    description: "Force regenerate all chunk from local data."
-    usage: "/forceregenall"
-    permission: naturerevive.forceregenall
-  regenthischunk:
-    description: "Force regenerate the chunk player located at."
-    usage: "/description"
-    permission: naturerevive.description
-  testrandomizeore:
-    description: "Test perlin noise from randomizeOre function."
-    usage: "/testrandomizeore"
-    permission: naturerevive.testrandomizeore
-  reloadreviveconfig:
-    aliases: [rrc]
-    description: "Reload read-only config from file."
-    usage: "/reloadreviveconfig"
-    permission: naturerevive.reloadreviveconfig
-  togglerevive:
-    aliases: [tgrv]
-    description: "Toggle whether or not to enable/disable the chunk regeneration system."
-    usage: "/togglerevive"
-    permission: naturerevive.togglerevive
-  navdebug:
-    description: "Show Debugging purpose messages"
-    usage: "/navdebug"
-    permission: naturerevive.navdebug
-  navmigrate:
-    description: "Show Debugging purpose messages"
-    usage: "/navmigrate <yaml/sqlite/mysql>"
-    permission: naturerevive.navmigrate
+  naturerevive:
+    description: The main command of naturerevive.
+    aliases: [nr]
+    usage: "/naturerevive <subcommands> <subcommand-args...>"
+
 permissions:
   naturerevive.forceregenall:
     default: op

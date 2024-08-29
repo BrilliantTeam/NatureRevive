@@ -21,7 +21,7 @@ public class ReadonlyConfig {
 
     private YamlFile configuration;
 
-    public final int CONFIG_VERSION = 16;
+    public final int CONFIG_VERSION = 17;
 
     public boolean debug;
 
@@ -192,11 +192,11 @@ public class ReadonlyConfig {
             configuration.setComment("messages.reload-failure-message", convertListStringToString(Arrays.asList("當插件配置檔重載失敗時，向指令執行者傳送的訊息.",
                     "The message to be sent on plugin's configuration is failed to reload.")));
 
-            configuration.set("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
+            configuration.set("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請執行 /naturerevive resume");
             configuration.setComment("messages.stop-regeneration", convertListStringToString(Arrays.asList("當區塊重生系統被關閉時，向指令執行者傳送的訊息.",
                     "The message to be sent on plugin's chunk regeneration system was turned off.")));
 
-            configuration.set("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+            configuration.set("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請執行 /naturerevive pause");
             configuration.setComment("messages.start-regeneration", convertListStringToString(Arrays.asList("當區塊重生系統被重新開啟時，向指令執行者傳送的訊息.",
                     "The message to be sent on plugin's chunk regeneration system was turned on again.")));
 
@@ -656,6 +656,14 @@ public class ReadonlyConfig {
 
                 configuration.remove("sql-processing-tick");
                 configuration.set("sql-processing-count", 500);
+            case 16:
+                configuration.set("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請執行 /naturerevive resume");
+                configuration.setComment("messages.stop-regeneration", convertListStringToString(Arrays.asList("當區塊重生系統被關閉時，向指令執行者傳送的訊息.",
+                        "The message to be sent on plugin's chunk regeneration system was turned off.")));
+
+                configuration.set("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請執行 /naturerevive pause");
+                configuration.setComment("messages.start-regeneration", convertListStringToString(Arrays.asList("當區塊重生系統被重新開啟時，向指令執行者傳送的訊息.",
+                        "The message to be sent on plugin's chunk regeneration system was turned on again.")));
             default:
                 configuration.set("config-version", CONFIG_VERSION);
                 try {
@@ -701,8 +709,8 @@ public class ReadonlyConfig {
         coreProtectUserName = configuration.getString("coreprotect-log-username", "#資源再生");
         reloadSuccessMessage = configuration.getString("messages.reload-success-message", "&a成功重載插件配置檔!");
         reloadFailureMessage = configuration.getString("messages.reload-failure-message", "&c插件配置檔重載失敗, 請查看後台以獲取詳細記錄.");
-        stopChunkRegenerationMessage = configuration.getString("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次開啟, 請重新執行該指令!");
-        startChunkRegenerationMessage = configuration.getString("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請重新執行該指令!");
+        stopChunkRegenerationMessage = configuration.getString("messages.stop-regeneration", "&e關閉區塊重生系統成功, 倘若想要再次關閉, 請執行 /naturerevive resume");
+        startChunkRegenerationMessage = configuration.getString("messages.start-regeneration", "&a開啟區塊重生系統成功, 倘若想要再次關閉, 請執行 /naturerevive pause");
         forceRegenFailedDueRegenStopMessage = configuration.getString("messages.force-regen-fail-due-to-regeneration-stop", "&c無法在區塊重生系統關閉時強制重生區塊!");
 
         ignoredWorld = configuration.getStringList("blacklist-worlds");

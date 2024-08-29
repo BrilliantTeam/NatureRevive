@@ -1,6 +1,7 @@
-package engineer.skyouo.plugins.naturerevive.spigot.commands;
+package engineer.skyouo.plugins.naturerevive.spigot.commands.regen;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.SubCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IDependency;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.IntegrationUtil;
 import engineer.skyouo.plugins.naturerevive.spigot.integration.engine.IEngineIntegration;
@@ -13,8 +14,11 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class RegenThisChunkCommand implements CommandExecutor {
+import java.util.List;
+
+public class RegenThisChunkCommand implements SubCommand {
 
     public RegenThisChunkCommand() {
 
@@ -59,5 +63,20 @@ public class RegenThisChunkCommand implements CommandExecutor {
             ChunkRegeneration.regenerateChunk(new BukkitPositionInfo(player.getLocation(), 0L), engineIntegration);
         });
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return "regenchunk";
+    }
+
+    @Override
+    public boolean hasPermissionToExecute(CommandSender sender) {
+        return sender.hasPermission("naturerevive.regenthischunk");
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        return List.of("bukkit", "fawe");
     }
 }

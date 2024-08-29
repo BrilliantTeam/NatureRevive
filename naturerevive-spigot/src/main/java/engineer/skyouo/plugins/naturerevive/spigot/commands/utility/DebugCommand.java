@@ -1,15 +1,20 @@
-package engineer.skyouo.plugins.naturerevive.spigot.commands;
+package engineer.skyouo.plugins.naturerevive.spigot.commands.utility;
 
 import engineer.skyouo.plugins.naturerevive.spigot.NatureRevivePlugin;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.SubCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.config.adapters.MySQLDatabaseAdapter;
 import engineer.skyouo.plugins.naturerevive.spigot.structs.BukkitPositionInfo;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Iterator;
+import java.util.List;
 
-public class DebugCommand implements CommandExecutor {
+public class DebugCommand implements SubCommand {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -39,5 +44,20 @@ public class DebugCommand implements CommandExecutor {
         sender.sendMessage("Time now is: " + System.currentTimeMillis());
         sender.sendMessage("============================");
         return true;
+    }
+
+    @Override
+    public String getName() {
+        return "debug";
+    }
+
+    @Override
+    public boolean hasPermissionToExecute(CommandSender sender) {
+        return sender.hasPermission("naturerevive.navdebug");
+    }
+
+    @Override
+    public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        return List.of();
     }
 }

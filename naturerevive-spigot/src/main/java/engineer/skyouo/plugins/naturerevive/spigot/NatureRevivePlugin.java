@@ -4,7 +4,14 @@ import engineer.skyouo.plugins.naturerevive.common.INMSWrapper;
 import engineer.skyouo.plugins.naturerevive.common.structs.Queue;
 import engineer.skyouo.plugins.naturerevive.spigot.api.IAPIMain;
 import engineer.skyouo.plugins.naturerevive.spigot.api.IIntegrationManager;
-import engineer.skyouo.plugins.naturerevive.spigot.commands.*;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.NatureReviveMainCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.regen.ForceRegenAllCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.regen.TestRandomizeOreCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.regen.ToggleChunkRegenerationCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.utility.DebugCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.utility.MigrateCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.regen.RegenThisChunkCommand;
+import engineer.skyouo.plugins.naturerevive.spigot.commands.utility.ReloadCommand;
 import engineer.skyouo.plugins.naturerevive.spigot.config.DatabaseConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.config.ReadonlyConfig;
 import engineer.skyouo.plugins.naturerevive.spigot.constants.OreBlocksCompat;
@@ -93,7 +100,7 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
         integrationManager = new IntegrationManager();
 
         if (!checkSoftDependPlugins()) {
-            NatureReviveComponentLogger.error("&c由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
+            NatureReviveComponentLogger.error("由於您於設置中開啟了部分功能, 且 NatureRevive 無法載入對應的依賴插件, 因此 NatureRevive 將會停止載入.");
             getPluginLoader().disablePlugin(this);
 
             return;
@@ -118,13 +125,25 @@ public class NatureRevivePlugin extends JavaPlugin implements IAPIMain {
             return;
         }
 
-        registerCommand("forceregenall", new ForceRegenAllCommand(this));
+        /*
+        registerCommand("forceregenall", new ForceRegenAllCommand());
         registerCommand("regenthischunk", new RegenThisChunkCommand());
         registerCommand("testrandomizeore", new TestRandomizeOreCommand());
         registerCommand("reloadreviveconfig", new ReloadCommand());
         registerCommand("togglerevive", new ToggleChunkRegenerationCommand());
         registerCommand("navdebug", new DebugCommand());
         registerCommand("navmigrate", new MigrateCommand());
+         */
+
+        NatureReviveMainCommand commandHandler = new NatureReviveMainCommand();
+        registerCommand("naturerevive", commandHandler);
+        commandHandler.addSubCommand(new ForceRegenAllCommand());
+        commandHandler.addSubCommand(new RegenThisChunkCommand());
+        commandHandler.addSubCommand(new TestRandomizeOreCommand());
+        commandHandler.addSubCommand(new ReloadCommand());
+        commandHandler.addSubCommand(new ToggleChunkRegenerationCommand());
+        commandHandler.addSubCommand(new DebugCommand());
+        commandHandler.addSubCommand(new MigrateCommand());
 
         getServer().getPluginManager().registerEvents(new ChunkRelatedEventListener(), this);
         getServer().getPluginManager().registerEvents(new ObfuscateLootListener(), this);

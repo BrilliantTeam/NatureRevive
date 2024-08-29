@@ -22,25 +22,35 @@ Spigot: 暫無<br>
 ## 🖌Commands | 指令
 ```
 
-/forceregenall - 強制再生所有已過期的區塊
+/nr forceregenall - 強制再生所有已過期的區塊
 
-/reloadreviveconfig or /rrc - 重新載入插件
+/nr regenthischunk - 強制再生當前所在的區塊
 
-/togglerevive or /tgrv - 暫停資源再生流程，再輸入一次指令開啟
+/nr reload - 重新載入插件
 
-/navmigrate <yaml/sqlite/mysql> - 將資料庫遷移到指定的數據庫
+/nr pause - 暫停資源再生流程
+
+/nr resume - 開啟資源再生流程
+
+/nr migrate <yaml/sqlite/mysql> - 將資料庫遷移到指定的數據庫
+
+/nr debug - debug 訊息，非必要時請勿使用
 
 ```
 
 ## 🔓Permissions | 權限
 ```
 
-naturerevive.forceregenall - 使用 /forceregenall 的權限
+naturerevive.forceregenall - 使用 /nr forceregenall 的權限
 
-naturerevive.togglerevive - 使用 /togglerevive 的權限
+naturerevive.regenthischunk - 使用 /nr regenthischunk 的權限
 
-naturerevive.reloadreviveconfig - 使用 /reloadreviveconfig or /rrc 的權限
+naturerevive.togglerevive - 使用 /nr pause 與 /nr resume 的權限
 
-naturerevive.navmigrate- 使用 /navmigrate 的權限
+naturerevive.reloadreviveconfig - 使用 /nr reload 的權限
+
+naturerevive.navmigrate- 使用 /nr migrate 的權限
+
+naturerevive.debug - 使用 /nr debug 的權限
 
 ```

@@ -65,7 +65,7 @@ public class IntegrationManager implements IIntegrationManager {
             }
         }
 
-        builtinDependencies.clear();
+        // builtinDependencies.clear();
         return true;
     }
 
@@ -131,5 +131,9 @@ public class IntegrationManager implements IIntegrationManager {
         );
 
         return dependencies.remove(dependency);
+    }
+
+    public void clearDependency() {
+        dependencies.clear();
     }
 }

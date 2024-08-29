@@ -49,6 +49,8 @@ public class Util {
                     versions[2] < 2 ? (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_1") :
                     versions[2] < 5 ? (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_4") :
                             (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_20_6");
+            case 21:
+                return (INMSWrapper) getClassAndInit(nmsWrapperPrefix + "NMSHandler1_21");
         }
 
         return null;

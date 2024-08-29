@@ -26,16 +26,17 @@ public class FAWEIntegration implements IEngineIntegration {
         Plugin plugin = NatureRevivePlugin.instance.getServer().getPluginManager().getPlugin("FastAsyncWorldEdit");
 
         if (plugin != null) {
-            String version = plugin.getDescription().getVersion().split(";")[0];
+            String version = plugin.getDescription().getVersion()
+                    .split(";")[0].split("-")[0];
             List<Integer> num = Arrays.stream(version.split("\\."))
                     .map(Integer::valueOf)
                     .toList();
 
-            if (num.get(0) > 2 || (num.get(0) == 2 && num.get(1) > 9) || (num.get(0) == 2 && num.get(1) == 9 && num.get(2) > 2)) {
+            /*if (num.get(0) > 2 || (num.get(0) == 2 && num.get(1) > 9) || (num.get(0) == 2 && num.get(1) == 9 && num.get(2) > 2)) {
                 NatureReviveComponentLogger.warning("當前版本的 NatureRevive 暫不兼容 FastAsyncWorldEdit 2.9.2 以上的版本。");
                 NatureReviveComponentLogger.warning("若想使用 FAWE 重生引擎，建議安裝 FastAsyncWorldEdit 2.9.2 版本。");
                 return false;
-            }
+            }*/
 
             return true;
         }

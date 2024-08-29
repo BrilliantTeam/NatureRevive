@@ -77,7 +77,8 @@ public class ChunkRegeneration {
             if (!integration.checkHasLand(chunk)) continue;
 
             for (BlockState blockState : chunk.getTileEntities()) {
-                if (integration.isInLand(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()))) {
+                if (integration.
+                        isInLand(new Location(location.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()))) {
                     String nbt = nmsWrapper.getNbtAsString(chunk.getWorld(), blockState);
 
                     nbtWithPos.add(new NbtWithPos(nbt, chunk.getWorld(), blockState.getX(), blockState.getY(), blockState.getZ()));
@@ -174,8 +175,8 @@ public class ChunkRegeneration {
 
         if (integration.stream().anyMatch(i -> i.checkHasLand(chunk))) {
             for (int x = 0; x < 16; x++) {
-                for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y <= chunk.getWorld().getMaxHeight(); y++) {
-                    for (int z = 0; z < 16; z++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int y = nmsWrapper.getWorldMinHeight(chunk.getWorld()); y < chunk.getWorld().getMaxHeight(); y++) {
                         Location targetLocation = new Location(chunk.getWorld(), (chunk.getX() << 4) + x, y, (chunk.getZ() << 4) + z);
                         if (integration.stream().noneMatch(i -> i.isInLand(targetLocation)))
                             continue;

@@ -34,7 +34,7 @@ public class StructureRegeneration {
                                     if (targetType.equals(Material.END_PORTAL) || targetType.equals(Material.END_GATEWAY) || targetType.equals(Material.BEDROCK))
                                         perversedBlocks.put(neighborLocation, oldChunkSnapshot.getBlockData(xyz[0], xyz[1], xyz[2]));
                                 }
-                    } else if (blockType.equals(Material.NETHER_PORTAL) && !perversedBlocks.containsKey(originLocation)) {
+                    }/* else if (blockType.equals(Material.NETHER_PORTAL) && !perversedBlocks.containsKey(originLocation)) {
                         for (int i = -1; i <= 1; i++)
                             for (int j = -1; j <= 1; j++)
                                 for (int k = -1; k <= 1; k++) {
@@ -48,7 +48,7 @@ public class StructureRegeneration {
                                     if (targetType.equals(Material.NETHER_PORTAL) || targetType.equals(Material.OBSIDIAN))
                                         perversedBlocks.put(neighborLocation, oldChunkSnapshot.getBlockData(xyz[0], xyz[1], xyz[2]));
                                 }
-                    } else if (blockType.equals(Material.BEDROCK)) {
+                    }*/ else if (blockType.equals(Material.BEDROCK)) {
                         if (!chunk.getWorld().getEnvironment().equals(World.Environment.THE_END))
                             continue;
 

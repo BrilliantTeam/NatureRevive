@@ -198,7 +198,7 @@ public class ChunkRelatedEventListener implements Listener {
             return;
 
         for (ILandPluginIntegration integration : IntegrationUtil.getLandIntegrations()) {
-            if (integration.isInLand(location) && !integration.isStrictMode())
+            if (integration.checkHasLand(location.getChunk()) && !integration.isStrictMode())
                 return;
         }
 
@@ -213,7 +213,7 @@ public class ChunkRelatedEventListener implements Listener {
 
     private void log(Event event, Location location) {
         for (ILandPluginIntegration integration : IntegrationUtil.getLandIntegrations()) {
-            if (integration.isInLand(location) && !integration.isStrictMode())
+            if (integration.checkHasLand(location.getChunk()) && !integration.isStrictMode())
                 return;
         }
 

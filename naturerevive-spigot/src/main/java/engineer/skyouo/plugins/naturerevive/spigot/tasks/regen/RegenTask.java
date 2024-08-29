@@ -28,7 +28,7 @@ public class RegenTask implements Task {
                 List<ILandPluginIntegration> integrations = IntegrationUtil.getLandIntegrations();
 
                 if (!integrations.isEmpty() &&
-                        integrations.stream().anyMatch(integration -> integration.isInLand(task.getLocation()) && !integration.isStrictMode()))
+                        integrations.stream().anyMatch(integration -> integration.checkHasLand(task.getLocation().getChunk()) && !integration.isStrictMode()))
                     continue;
 
                 ScheduleUtil.REGION.runTask(NatureRevivePlugin.instance, task.getLocation(), () -> {

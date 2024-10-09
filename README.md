@@ -5,7 +5,7 @@ Spigot: 暫無<br>
 巴哈介紹: https://forum.gamer.com.tw/C.php?bsn=18673&snA=197615&tnum=1
 ---
 
-[Made for 輝煌伺服器.](https://discord.gg/5MHGpAFGEN)
+[Made for 輝煌伺服器.](https://discord.gg/9c287zPpUZ)
 
 ## 📃 License | 開源許可證
 
